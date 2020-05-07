@@ -9,6 +9,11 @@ connector = ScyllaConnector()
 
 @app.route('/stock/availability/<item_id>', methods=['GET'])
 def get_availability(item_id):
+    """Returns the availability of the item.
+
+    :param item_id: the id of the item
+    :return: the number of the item in stock
+    """
     try:
         item_count = connector.get_availability(escape(item_id))
         return str(item_count)
@@ -18,6 +23,12 @@ def get_availability(item_id):
 
 @app.route('/stock/subtract/<item_id>/<int:number>', methods=['POST'])
 def subtract_amount(item_id, number):
+    """Subtracts the given number from the item count.
+
+    :param item_id: the id of the item
+    :param number: the number to subtract from stock
+    :return: the number of the item in stock
+    """
     try:
         item_count = connector.subtract_amount(item_id, number)
         return str(item_count)
@@ -29,6 +40,12 @@ def subtract_amount(item_id, number):
 
 @app.route('/stock/add/<item_id>/<int:number>', methods=['POST'])
 def add_amount(item_id, number):
+    """Adds the given number to the item count.
+
+    :param item_id: the id of the item
+    :param number: the number to add to stock
+    :return: the number of the item in stock
+    """
     try:
         item_count = connector.add_amount(item_id, number)
         return str(item_count)
@@ -38,6 +55,10 @@ def add_amount(item_id, number):
 
 @app.route('/stock/create', methods=['POST'])
 def create_item():
+    """Creates an item with the price defined in the request body.
+
+    :return: the id of the created item
+    """
     try:
         price = int(escape(request.form['price']))
         item_id = connector.create_item(price)
