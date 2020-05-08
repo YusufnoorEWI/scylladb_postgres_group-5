@@ -41,7 +41,7 @@ class ScyllaConnector:
             raise ValueError(f"User with id {user_id} not found")
 
     @staticmethod
-    def get_item(item_id):
+    def get_user(user_id):
         """Retrieves the item from the database by its id.
 
         :param item_id: the id of the item
@@ -49,27 +49,27 @@ class ScyllaConnector:
         :return: the item with id item_id
         """
         try:
-            item = StockItem.get(id=item_id)
+            item = UsersItem.get(id=user_id)
         except QueryException:
-            raise ValueError(f"Item with id {item_id} not found")
+            raise ValueError(f"Item with id {user_id} not found")
         except ValidationError:
-            raise ValueError(f"Item id {item_id} is not a valid id")
+            raise ValueError(f"Item id {user_id} is not a valid id")
 
         return item
 
-    def add_amount(self, item_id, number):
+    def add_amount(self, user_id, number):
         """Adds the given number to the item count.
 
         :param item_id: the id of the item
         :param number: the number to add to stock
         :return: the number of the item in stock
         """
-        item = self.get_item(item_id)
-        item.in_stock = item.in_stock + number
-        StockItem.update(item)
-        return item.in_stock
+        user = self.get_item(user_id)
+        user.credit = user.credit + number
+        UsersItem.update(UsersItem)
+        return user.in_stock
 
-    def subtract_amount(self, item_id, number):
+    def subtract_amount(self, user_id, number):
         """Subtracts the given number from the item count.
 
         :param item_id: the id of the item
@@ -77,19 +77,10 @@ class ScyllaConnector:
         :raises AssertionError: if the item count after subtraction is negative
         :return: the number of the item in stock
         """
-        item = self.get_item(item_id)
-        item.in_stock = item.in_stock - number
+        user = self.get_user(user_id)
+        user.credit = user.credit - number
 
-        assert item.in_stock >= 0, 'Item count cannot be negative'
+        assert user.credit >= 0, 'Item count cannot be negative'
 
-        StockItem.update(item)
-        return item.in_stock
-
-    def get_availability(self, item_id):
-        """Returns the availability of the item.
-
-        :param item_id: the id of the item
-        :return: the number of the item in stock
-        """
-        item = self.get_item(item_id)
-        return item.in_stock
+        UsersItem.update(user)
+        return user.credit

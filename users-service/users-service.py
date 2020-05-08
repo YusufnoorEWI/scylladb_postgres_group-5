@@ -1,5 +1,4 @@
 from flask import Flask, abort
-from markupsafe import escape
 from .connector import ScyllaConnector
 
 app = Flask(__name__)
@@ -29,24 +28,35 @@ def remove(user_id):
     except:
         abort(500)
 
-
-
-@app.route('/stock/availability/<item_id>', methods=['GET'])
-def get_availability(item_id):
+@app.route('/users/find/<user_id>', methods=['GET'])
+def find(user_id):
     """Returns the availability of the item.
 
     :param item_id: the id of the item
     :return: the number of the item in stock
     """
     try:
-        item_count = connector.get_availability(escape(item_id))
-        return str(item_count)
+        user = connector.get_user(user_id)
+        return user
+    except ValueError:
+        abort(404)
+
+@app.route('/users/credit/<user_id>', methods=['GET'])
+def find(user_id):
+    """Returns the availability of the item.
+
+    :param item_id: the id of the item
+    :return: the number of the item in stock
+    """
+    try:
+        user = connector.get_user(user_id)
+        return str(user.credit)
     except ValueError:
         abort(404)
 
 
-@app.route('/stock/subtract/<item_id>/<int:number>', methods=['POST'])
-def subtract_amount(item_id, number):
+@app.route('/users/credit/subtract/<user_id>/<double:number>', methods=['POST'])
+def subtract_amount(user_id, number):
     """Subtracts the given number from the item count.
 
     :param item_id: the id of the item
@@ -54,16 +64,16 @@ def subtract_amount(item_id, number):
     :return: the number of the item in stock
     """
     try:
-        item_count = connector.subtract_amount(item_id, number)
-        return str(item_count)
+        connector.subtract_amount(user_id, number)
+        return "success"
     except AssertionError:
         abort(400)
     except ValueError:
         abort(404)
 
 
-@app.route('/stock/add/<item_id>/<int:number>', methods=['POST'])
-def add_amount(item_id, number):
+@app.route('/users/credit/add/<user_id>/<double:number>', methods=['POST'])
+def add_amount(user_id, number):
     """Adds the given number to the item count.
 
     :param item_id: the id of the item
@@ -71,7 +81,7 @@ def add_amount(item_id, number):
     :return: the number of the item in stock
     """
     try:
-        item_count = connector.add_amount(item_id, number)
+        item_count = connector.add_amount(user_id, number)
         return str(item_count)
     except ValueError:
         abort(404)
