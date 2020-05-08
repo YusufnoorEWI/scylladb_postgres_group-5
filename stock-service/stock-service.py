@@ -60,7 +60,7 @@ def create_item():
     :return: the id of the created item
     """
     try:
-        price = int(escape(request.form['price']))
+        price = float(escape(request.form['price']))
         item_id = connector.create_item(price)
         return str(item_id)
     except:
