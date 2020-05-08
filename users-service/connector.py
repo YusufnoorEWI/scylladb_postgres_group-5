@@ -3,13 +3,13 @@ from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
 
-from .users_item import UsersItem
+from .users_item import Users
 
 
 class ScyllaConnector:
     def __init__(self):
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
-        and creates or updates the stock_item table.
+        and creates or updates the users table.
         """
         session = Cluster(['192.168.99.100']).connect()
         session.execute("""
@@ -18,38 +18,38 @@ class ScyllaConnector:
             """)
 
         connection.setup(['192.168.99.100'], "wdm")
-        sync_table(UsersItem)
+        sync_table(Users)
 
     @staticmethod
     def create():
-        """Creates an item with the specified price.
+        """Creates a user with zero initial credit.
 
-        :return: the id of the created item
+        :return: the id of the created user
         """
-        user = UsersItem.create(credit=0.0)
+        user = Users.create(credit=0.0)
         return user.id
 
     @staticmethod
     def remove(user_id):
-        """Creates an item with the specified price.
+        """Removes a user with the given user id.
 
-        :return: the id of the created item
+        :raises ValueError: if there is no such user
         """
         try:
-            UsersItem.get(id=user_id).delete()
+            Users.get(id=user_id).delete()
         except QueryException:
             raise ValueError(f"User with id {user_id} not found")
 
     @staticmethod
     def get_user(user_id):
-        """Retrieves the item from the database by its id.
+        """Retrieves the user from the database by its id.
 
-        :param item_id: the id of the item
-        :raises ValueError: if the item with item_id does not exist or if the format of the item_id is invalid
-        :return: the item with id item_id
+        :param item_id: the id of the user
+        :raises ValueError: if the user with user_id does not exist or if the format of the user_id is invalid
+        :return: the user with id user_id
         """
         try:
-            item = UsersItem.get(id=user_id)
+            item = Users.get(id=user_id)
         except QueryException:
             raise ValueError(f"Item with id {user_id} not found")
         except ValidationError:
@@ -58,29 +58,29 @@ class ScyllaConnector:
         return item
 
     def add_amount(self, user_id, number):
-        """Adds the given number to the item count.
+        """Adds the given number to the user's credit.
 
-        :param item_id: the id of the item
-        :param number: the number to add to stock
-        :return: the number of the item in stock
+        :param user_id: the id of the user
+        :param number: the number to add to credit
+        :return: the total credit
         """
         user = self.get_user(user_id)
         user.credit = user.credit + number
-        UsersItem.update(user)
-        return user.in_stock
+        Users.update(user)
+        return user.credit
 
     def subtract_amount(self, user_id, number):
-        """Subtracts the given number from the item count.
+        """Subtracts the given number from the user's credit.
 
-        :param item_id: the id of the item
-        :param number: the number to subtract from stock
-        :raises AssertionError: if the item count after subtraction is negative
-        :return: the number of the item in stock
+        :param user_id: the id of the user
+        :param number: the number to subtract from credit
+        :raises AssertionError: if the user credit after subtraction is negative
+        :return: the remaining credit
         """
         user = self.get_user(user_id)
 
         user.credit = user.credit - number
         assert user.credit >= 0.0, 'Item count cannot be negative'
 
-        UsersItem.update(user)
+        Users.update(user)
         return user.credit
