@@ -11,13 +11,13 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['127.0.0.1']).connect()
+        session = Cluster(['192.168.99.100']).connect()
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
 
-        connection.setup(['127.0.0.1'], "wdm")
+        connection.setup(['192.168.99.100'], "wdm")
         sync_table(StockItem)
 
     @staticmethod

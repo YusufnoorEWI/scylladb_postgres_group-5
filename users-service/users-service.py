@@ -11,8 +11,8 @@ def create():
     :return: the id of the created item
     """
     try:
-        item_id = connector.create()
-        return str(item_id)
+        user_id = connector.create()
+        return str(user_id)
     except:
         abort(500)
 
@@ -29,7 +29,7 @@ def remove(user_id):
         abort(500)
 
 @app.route('/users/find/<user_id>', methods=['GET'])
-def find(user_id):
+def find_user(user_id):
     """Returns the availability of the item.
 
     :param item_id: the id of the item
@@ -37,12 +37,12 @@ def find(user_id):
     """
     try:
         user = connector.get_user(user_id)
-        return user
+        return str(user)
     except ValueError:
         abort(404)
 
 @app.route('/users/credit/<user_id>', methods=['GET'])
-def find(user_id):
+def credit(user_id):
     """Returns the availability of the item.
 
     :param item_id: the id of the item
@@ -55,7 +55,7 @@ def find(user_id):
         abort(404)
 
 
-@app.route('/users/credit/subtract/<user_id>/<double:number>', methods=['POST'])
+@app.route('/users/credit/subtract/<user_id>/<int:number>', methods=['POST'])
 def subtract_amount(user_id, number):
     """Subtracts the given number from the item count.
 
@@ -72,7 +72,7 @@ def subtract_amount(user_id, number):
         abort(404)
 
 
-@app.route('/users/credit/add/<user_id>/<double:number>', methods=['POST'])
+@app.route('/users/credit/add/<user_id>/<int:number>', methods=['POST'])
 def add_amount(user_id, number):
     """Adds the given number to the item count.
 
@@ -81,8 +81,8 @@ def add_amount(user_id, number):
     :return: the number of the item in stock
     """
     try:
-        item_count = connector.add_amount(user_id, number)
-        return str(item_count)
+        connector.add_amount(user_id, number)
+        return "success"
     except ValueError:
         abort(404)
 

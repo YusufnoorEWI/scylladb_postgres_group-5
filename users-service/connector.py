@@ -11,13 +11,13 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['127.0.0.1']).connect()
+        session = Cluster(['192.168.99.100']).connect()
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
 
-        connection.setup(['127.0.0.1'], "wdm")
+        connection.setup(['192.168.99.100'], "wdm")
         sync_table(UsersItem)
 
     @staticmethod
@@ -26,8 +26,8 @@ class ScyllaConnector:
 
         :return: the id of the created item
         """
-        item = UsersItem.create(credit=0)
-        return item.id
+        user = UsersItem.create(credit=0.0)
+        return user.id
 
     @staticmethod
     def remove(user_id):
@@ -64,9 +64,9 @@ class ScyllaConnector:
         :param number: the number to add to stock
         :return: the number of the item in stock
         """
-        user = self.get_item(user_id)
+        user = self.get_user(user_id)
         user.credit = user.credit + number
-        UsersItem.update(UsersItem)
+        UsersItem.update(user)
         return user.in_stock
 
     def subtract_amount(self, user_id, number):
@@ -78,9 +78,9 @@ class ScyllaConnector:
         :return: the number of the item in stock
         """
         user = self.get_user(user_id)
-        user.credit = user.credit - number
 
-        assert user.credit >= 0, 'Item count cannot be negative'
+        user.credit = user.credit - number
+        assert user.credit >= 0.0, 'Item count cannot be negative'
 
         UsersItem.update(user)
         return user.credit
