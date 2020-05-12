@@ -1,5 +1,7 @@
+from _decimal import InvalidOperation
+from decimal import Decimal
+
 from flask import Flask, abort
-from flask import request
 from markupsafe import escape
 from .connector import ScyllaConnector
 
@@ -53,15 +55,14 @@ def add_amount(item_id, number):
         abort(404)
 
 
-@app.route('/stock/create', methods=['POST'])
-def create_item():
+@app.route('/stock/create/<price>', methods=['POST'])
+def create_item(price):
     """Creates an item with the price defined in the request body.
 
     :return: the id of the created item
     """
     try:
-        price = float(escape(request.form['price']))
-        item_id = connector.create_item(price)
+        item_id = connector.create_item(Decimal(price))
         return str(item_id)
-    except:
-        abort(500)
+    except InvalidOperation:
+        abort(404)
