@@ -1,7 +1,7 @@
 from _decimal import InvalidOperation
 from decimal import Decimal
 
-from flask import Flask, abort
+from flask import Flask, abort, jsonify
 from markupsafe import escape
 from .connector import ScyllaConnector
 
@@ -18,7 +18,32 @@ def get_availability(item_id):
     """
     try:
         item_count = connector.get_availability(escape(item_id))
-        return str(item_count)
+        response = {
+            "item_id": item_id,
+            "stock": item_count
+        }
+
+        return jsonify(response)
+    except ValueError:
+        abort(404)
+
+
+@app.route('/stock/price/<item_id>', methods=['GET'])
+def get_price(item_id):
+    """Returns the availability of the item.
+
+    :param item_id: the id of the item
+    :return: the number of the item in stock
+    """
+    try:
+        item = connector.get_item(escape(item_id))
+        response = {
+            "item_id": item.id,
+            "price": item.price,
+            "stock": item.in_stock
+        }
+
+        return jsonify(response)
     except ValueError:
         abort(404)
 
@@ -63,6 +88,10 @@ def create_item(price):
     """
     try:
         item_id = connector.create_item(Decimal(price))
-        return str(item_id)
+        response = {
+            "item_id": item_id,
+        }
+
+        return jsonify(response)
     except InvalidOperation:
         abort(404)
