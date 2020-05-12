@@ -1,4 +1,6 @@
-from flask import Flask, abort
+
+from decimal import *
+from flask import Flask, abort, jsonify
 from .connector import ScyllaConnector
 
 app = Flask(__name__)
@@ -37,7 +39,8 @@ def find_user(user_id):
     """
     try:
         user = connector.get_user(user_id)
-        return "id: " + str(user.id) + ", credit: " + str(user.credit)
+        user_dict = {"id": user.id, "credit": user.credit}
+        return jsonify(user_dict)
     except ValueError:
         abort(404)
 
@@ -55,7 +58,7 @@ def credit(user_id):
         abort(404)
 
 
-@app.route('/users/credit/subtract/<user_id>/<float:number>', methods=['POST'])
+@app.route('/users/credit/subtract/<user_id>/<number>', methods=['POST'])
 def subtract_amount(user_id, number):
     """Subtracts the given number from the user's credit.
 
@@ -64,15 +67,15 @@ def subtract_amount(user_id, number):
     :return: the remaining credit if successful, error otherwise
     """
     try:
-        result = connector.subtract_amount(user_id, 1.0*number)
+        result = connector.subtract_amount(user_id, Decimal(number))
         return str(result)
     except AssertionError:
         abort(400)
-    except ValueError:
+    except (ValueError, ConversionSyntax):
         abort(404)
 
 
-@app.route('/users/credit/add/<user_id>/<float:number>', methods=['POST'])
+@app.route('/users/credit/add/<user_id>/<number>', methods=['POST'])
 def add_amount(user_id, number):
     """Adds the given number to the user's credit.
 
@@ -81,9 +84,9 @@ def add_amount(user_id, number):
     :return: the total credit of the user if successful, error otherwise
     """
     try:
-        result = connector.add_amount(user_id, float(number))
+        result = connector.add_amount(user_id, Decimal(number))
         return str(result)
-    except ValueError:
+    except (ValueError, ConversionSyntax):
         abort(404)
 
 

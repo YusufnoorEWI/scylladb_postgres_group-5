@@ -44,16 +44,16 @@ class ScyllaConnector:
     def get_user(user_id):
         """Retrieves the user from the database by its id.
 
-        :param item_id: the id of the user
+        :param user_id: the id of the user
         :raises ValueError: if the user with user_id does not exist or if the format of the user_id is invalid
         :return: the user with id user_id
         """
         try:
             item = Users.get(id=user_id)
         except QueryException:
-            raise ValueError(f"Item with id {user_id} not found")
+            raise ValueError(f"User with id {user_id} not found")
         except ValidationError:
-            raise ValueError(f"Item id {user_id} is not a valid id")
+            raise ValueError(f"User id {user_id} is not a valid id")
 
         return item
 
@@ -80,7 +80,7 @@ class ScyllaConnector:
         user = self.get_user(user_id)
 
         user.credit = user.credit - number
-        assert user.credit >= 0.0, 'Item count cannot be negative'
+        assert user.credit >= 0.0, 'User credit cannot be negative'
 
         Users.update(user)
         return user.credit
