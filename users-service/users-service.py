@@ -14,7 +14,7 @@ def create():
     """
     try:
         user_id = connector.create()
-        return str(user_id)
+        return jsonify({"user_id": user_id}), 200
     except:
         abort(500)
 
@@ -26,7 +26,7 @@ def remove(user_id):
     """
     try:
         connector.remove(user_id)
-        return "success"
+        return jsonify({"success":True}), 200
     except:
         abort(500)
 
@@ -39,21 +39,7 @@ def find_user(user_id):
     """
     try:
         user = connector.get_user(user_id)
-        user_dict = {"id": user.id, "credit": user.credit}
-        return jsonify(user_dict)
-    except ValueError:
-        abort(404)
-
-@app.route('/users/credit/<user_id>', methods=['GET'])
-def credit(user_id):
-    """Returns the credit of the user with given user id
-
-    :param user_id: the id of the user
-    :return: the user's credit
-    """
-    try:
-        user = connector.get_user(user_id)
-        return str(user.credit)
+        return jsonify({"user_id": user.id, "credit": user.credit}), 200
     except ValueError:
         abort(404)
 
@@ -68,10 +54,10 @@ def subtract_amount(user_id, number):
     """
     try:
         result = connector.subtract_amount(user_id, Decimal(number))
-        return str(result)
+        return jsonify({"success": True, "credit": result}), 200
     except AssertionError:
         abort(400)
-    except (ValueError, ConversionSyntax):
+    except (ValueError, InvalidOperation):
         abort(404)
 
 
@@ -85,8 +71,8 @@ def add_amount(user_id, number):
     """
     try:
         result = connector.add_amount(user_id, Decimal(number))
-        return str(result)
-    except (ValueError, ConversionSyntax):
+        return jsonify({"success": True, "credit": result}), 200
+    except (ValueError, InvalidOperation):
         abort(404)
 
 
