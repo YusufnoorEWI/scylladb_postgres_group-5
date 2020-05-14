@@ -74,12 +74,3 @@ class ScyllaConnector:
 
         StockItem.update(item)
         return item.in_stock
-
-    def get_availability(self, item_id):
-        """Returns the availability of the item.
-
-        :param item_id: the id of the item
-        :return: the number of the item in stock
-        """
-        item = self.get_item(item_id)
-        return item.in_stock

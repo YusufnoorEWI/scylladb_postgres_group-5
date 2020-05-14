@@ -9,28 +9,9 @@ app = Flask(__name__)
 connector = ScyllaConnector()
 
 
-@app.route('/stock/availability/<item_id>', methods=['GET'])
-def get_availability(item_id):
-    """Returns the availability of the item.
-
-    :param item_id: the id of the item
-    :return: the number of the item in stock
-    """
-    try:
-        item_count = connector.get_availability(escape(item_id))
-        response = {
-            "item_id": item_id,
-            "stock": item_count
-        }
-
-        return jsonify(response)
-    except ValueError:
-        abort(404)
-
-
-@app.route('/stock/price/<item_id>', methods=['GET'])
-def get_price(item_id):
-    """Returns the availability of the item.
+@app.route('/stock/find/<item_id>', methods=['GET'])
+def find_item(item_id):
+    """Returns the item.
 
     :param item_id: the id of the item
     :return: the number of the item in stock
@@ -39,8 +20,8 @@ def get_price(item_id):
         item = connector.get_item(escape(item_id))
         response = {
             "item_id": item.id,
-            "price": item.price,
-            "stock": item.in_stock
+            "stock": item.in_stock,
+            "price": item.price
         }
 
         return jsonify(response)
