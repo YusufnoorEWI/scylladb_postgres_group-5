@@ -1,9 +1,14 @@
 from _decimal import InvalidOperation
 from decimal import Decimal
+import sys
+import os
 
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from .connector import ScyllaConnector
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from stock_service.connector import ScyllaConnector
 
 app = Flask(__name__)
 connector = ScyllaConnector()
