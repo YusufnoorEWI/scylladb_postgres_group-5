@@ -53,7 +53,11 @@ def subtract_amount(user_id, number):
     :return: the remaining credit if successful, error otherwise
     """
     try:
-        result = connector.subtract_amount(user_id, Decimal(number))
+        amount = Decimal(number)
+        if amount < 0:
+            abort(404)
+
+        result = connector.subtract_amount(user_id, amount)
         return jsonify({"success": True, "credit": result}), 200
     except AssertionError:
         abort(400)
@@ -70,7 +74,11 @@ def add_amount(user_id, number):
     :return: the total credit of the user if successful, error otherwise
     """
     try:
-        result = connector.add_amount(user_id, Decimal(number))
+        amount = Decimal(number)
+        if amount < 0:
+            abort(404)
+
+        result = connector.add_amount(user_id, amount)
         return jsonify({"success": True, "credit": result}), 200
     except (ValueError, InvalidOperation):
         abort(404)
