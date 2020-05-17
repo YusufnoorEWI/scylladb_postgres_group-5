@@ -18,7 +18,7 @@ To build the docker image, run the following command: `docker build -t <nameofse
 
 So for example from the root directory of this project this would be `docker build -t stock_service:latest stock_service/`
 
-To run this docker image run the following command: `docker run -p 8000:8000 -t <nameofservice>`
+To run this docker image run the following command: `docker run --network host <nameofservice>`
 
 ## Install and run ScyllaDB docker image:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla`
@@ -26,3 +26,6 @@ To run this docker image run the following command: `docker run -p 8000:8000 -t 
 ## Possible bugs and fixes:
 Some machines overprovision scylla inside a docker container. If your scylladb docker container is not working try appending the following: `--smp 2` this will instruct scylladb inside the container to consume less resources. The entire command now looks like this:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla --smp 2`
+
+Docker containers communicate to each other using docker networks. By default your dockerized microservice will not be able to communicate with the dockerized database. At some point in time we will have to think about a network between services and databases, but for now the `--network host` flag will suffice.
+More on this here: https://docs.docker.com/network/network-tutorial-standalone/
