@@ -18,7 +18,7 @@ To build the docker image, run the following command: `docker build -t <nameofse
 
 So for example from the root directory of this project this would be `docker build -t stock_service:latest stock_service/`
 
-To run this docker image run the following command: `docker run --network host <nameofservice>`
+To run this docker image run the following command: `docker run -dit -p 8000:8000 <nameofservice>`
 
 ## Install and run ScyllaDB docker image:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla`
