@@ -14,12 +14,7 @@ Now there are multiple options:
 ## Build and run a microservice using docker
 To run a service using docker, a Dockerfile is required like the one in stock_service. Make sure this is the case.
 
-To build the docker image, run the following command: `docker build -t <nameofservice>:latest <path/to/service/directory>`
-
-So for example from the root directory of this project this would be `docker build -t stock_service:latest stock_service/`
-
-To run this docker image run the following command: `docker run -dit -p 8000:8000 <nameofservice>`
-
+To make life easier for you guys I have defined all the steps of starting services and databases in one single docker-compose.yml file. Now the only thing you should have to do is run `docker-compose up`. This however requires you to install docker-compose.
 ## Install and run ScyllaDB docker image:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla`
 
