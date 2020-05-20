@@ -7,17 +7,18 @@ from stock_service.stock_item import StockItem
 
 
 class ScyllaConnector:
-    def __init__(self):
+    def __init__(self, host):
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['127.0.0.1']).connect()
+
+        session = Cluster([host]).connect()
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
 
-        connection.setup(['127.0.0.1'], "wdm")
+        connection.setup([host], "wdm")
         sync_table(StockItem)
 
     @staticmethod
