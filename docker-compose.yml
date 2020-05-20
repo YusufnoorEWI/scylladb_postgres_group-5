@@ -1,0 +1,26 @@
+version: "2.4"
+
+services:
+  scylla_stock:
+    container_name: "scylla_stock"
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: "--smp 2"
+  stock_service:
+    container_name: "stock_service"
+    image: "stock_service:latest"
+    depends_on:
+      - scylla_stock
+    networks:
+      - our_network
+    build:
+      context: "./stock_service"
+    ports:
+      - "8000:8000"
+    restart: always
+
+networks:
+  our_network:
+    driver: "bridge"
+    name: "our_network"

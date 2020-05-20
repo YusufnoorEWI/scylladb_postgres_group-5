@@ -1,6 +1,6 @@
 FROM python:3.8-slim-buster
 
-ENV DB_HOST "172.17.0.2"
+ENV DB_HOST "scylla_stock"
 
 COPY . /stock_service
 
