@@ -1,0 +1,26 @@
+version: '3'
+services:
+# first you write all the services that are inside your app
+  # build: takes the loc of the flask app file
+  #image: the name of the image call it whatever
+  #restart: always (in order to be always up, if there is no problem with the code)
+  #env_file : the configuration variables for the database this case postgress
+  #ports: {local_machine}:{container}
+  payment-service:
+    build: payment_postgres
+    image: payment:latest
+    # you have to write the url of the user service
+    environment:
+      - USER_SERVICE_URL=""
+    restart: always
+    env_file:
+      - payment_postgres/postgres.env
+    ports:
+    - 5001:5000
+
+
+  payment-db:
+    image: postgres:latest
+    env_file:
+      - payment_postgres/postgres.env
+
