@@ -11,7 +11,6 @@ app = Flask(__name__)
 connector = ScyllaConnector()
 server = 'http://127.0.0.1:5000/'
 
-
 @app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     '''
