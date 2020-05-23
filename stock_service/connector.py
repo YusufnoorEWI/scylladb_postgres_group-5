@@ -14,11 +14,10 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        connected = False
-        while not connected:
+        while True:
             try:
                 session = Cluster([host]).connect()
-                connected = True
+                break
             except Exception:
                 sleep(1)
         session.execute("""

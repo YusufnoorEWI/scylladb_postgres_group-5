@@ -6,7 +6,7 @@ services:
     image: scylladb/scylla
     networks:
       - our_network
-    command: "--smp 2"
+    command: "--smp 1"
   stock_service:
     image: "stock_service:latest"
     depends_on:
