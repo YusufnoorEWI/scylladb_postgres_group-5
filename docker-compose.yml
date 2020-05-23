@@ -8,7 +8,6 @@ services:
       - our_network
     command: "--smp 2"
   stock_service:
-    container_name: "stock_service"
     image: "stock_service:latest"
     depends_on:
       - scylla_stock
