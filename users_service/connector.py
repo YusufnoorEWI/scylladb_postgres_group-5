@@ -2,22 +2,28 @@ from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
+from time import sleep
 
 from .users_item import Users
 
 
 class ScyllaConnector:
-    def __init__(self):
+    def __init__(self, host):
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the users table.
         """
-        session = Cluster(['192.168.99.100']).connect()
+        while True:
+            try:
+                session = Cluster([host]).connect()
+                break
+            except Exception:
+                sleep(1)
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
 
-        connection.setup(['192.168.99.100'], "wdm")
+        connection.setup([host], "wdm")
         sync_table(Users)
 
     @staticmethod

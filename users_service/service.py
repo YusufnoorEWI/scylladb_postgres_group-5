@@ -1,12 +1,18 @@
-
 from decimal import *
 from flask import Flask, abort, jsonify
-from .connector import ScyllaConnector
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from users_service.connector import ScyllaConnector
 
 app = Flask(__name__)
-connector = ScyllaConnector()
+db_host = os.getenv("DB_HOST", "127.0.0.1")
+connector = ScyllaConnector(db_host)
 
-@app.route('/users/create', methods=['POST'])
+
+@app.route('/users/create/', methods=['POST'])
 def create():
     """Creates a user with zero initial credit.
 
@@ -18,6 +24,7 @@ def create():
     except:
         abort(500)
 
+
 @app.route('/users/remove/<user_id>', methods=['DELETE'])
 def remove(user_id):
     """Removes a user with the given user id.
@@ -26,9 +33,10 @@ def remove(user_id):
     """
     try:
         connector.remove(user_id)
-        return jsonify({"success":True}), 200
+        return jsonify({"success": True}), 200
     except:
         abort(500)
+
 
 @app.route('/users/find/<user_id>', methods=['GET'])
 def find_user(user_id):
@@ -82,6 +90,3 @@ def add_amount(user_id, number):
         return jsonify({"success": True, "credit": result}), 200
     except (ValueError, InvalidOperation):
         abort(404)
-
-
-
