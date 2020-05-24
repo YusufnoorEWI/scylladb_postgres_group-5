@@ -1,9 +1,13 @@
+import sys
+import os
+
 from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
 
-from .order_item import OrderItem
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from order_service.order_item import OrderItem
 
 
 class ScyllaConnector:
@@ -27,7 +31,6 @@ class ScyllaConnector:
         :param price: the user id
         :return: the id of the order
         """
-        #BUG: check whether this user exist
         order = OrderItem.create(user_id=user_id, items_list=[],\
              paid=False, total_cost=0)
         return order.order_id
@@ -41,10 +44,7 @@ class ScyllaConnector:
         try:
             order = OrderItem.get(order_id=order_id).delete()
         except QueryException:
-            raise ValueError(f"User with id {order_id} not found")
-        #BUG: not sure if it's the right method
-        #order.delete()
-        #return 
+            raise ValueError(f"Order with id {order_id} not found") 
 
     @staticmethod
     def get_order(order_id):
@@ -71,9 +71,10 @@ class ScyllaConnector:
         :param order_id: the id of the order
         :return: the list of item in order
         """
+        if item_price < 0:
+            raise ValueError(f"Item price {item_price} is not valid")
         order = self.get_order(order_id)
         order.items_list.append(item_id)
-        #BUG: How to update the total cost
         #Could try to use stock service to get it
         order.total_cost += item_price 
         OrderItem.update(order)
@@ -92,7 +93,6 @@ class ScyllaConnector:
             order.items_list.remove(item_id)
         except ValueError:
             assert True, 'Item not in order'
-        #BUG: How to update the total cost
         order.total_cost -= item_price
         assert order.total_cost < 0, 'Total cost < 0'
         OrderItem.update(order)

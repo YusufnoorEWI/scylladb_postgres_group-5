@@ -1,16 +1,29 @@
 import requests
+import sys
+import os
 
 from _decimal import InvalidOperation
 from decimal import Decimal
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from .connector import ScyllaConnector
+from order_service.connector import ScyllaConnector
 
 app = Flask(__name__)
 connector = ScyllaConnector()
-server = 'http://127.0.0.1:5000/'
-
+try:
+    user_host = os.getenv('user')
+except:
+    user_host = 'http://127.0.0.1:5000/'
+try:
+    stock_host = os.getenv('stock')
+except:
+    stock_host = = 'http://127.0.0.1:5000/'
+try:
+    payment_host = os.getenv('payment')
+    payment_host = = 'http://127.0.0.1:5000/'
+    
 @app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     '''
@@ -19,7 +32,7 @@ def create_order(user_id):
     return: the order’s id
     '''
     try:
-        response = requests.get(server + 'users/find/'+ str(user_id))
+        response = requests.get(user_host + 'users/find/'+ str(user_id))
         order_id = connector.create_order((user_id))
         response = {
             "order_id": order_id
@@ -60,7 +73,7 @@ def retrieve_order(order_id):
 @app.route('/order/addItem/<order_id>/<item_id>', methods=['POST'])
 def add_item(order_id, item_id):
     try:
-        response = requests.get(server + 'stock/find/'+ str(item_id))
+        response = requests.get(stock_host + 'stock/find/'+ str(item_id))
         item_list = connector.add_item(order_id, item_id, response['price'])
         return jsonify({'item_list':str(' '.join(str(k) for k in item_list))})
     except ValueError:
@@ -69,7 +82,7 @@ def add_item(order_id, item_id):
 @app.route('/order/removeItem/<order_id>/<item_id>', methods=['DELETE'])
 def remove_item(order_id, item_id):
     try:
-        response = requests.get(server + 'stock/find/'+ str(item_id))
+        response = requests.get(stock_host + 'stock/find/'+ str(item_id))
         item_list = connector.remove_item(order_id, item_id, response['price'])
         return jsonify({'item_list':str(' '.join(str(k) for k in item_list))})
     except ValueError:
@@ -87,11 +100,11 @@ def checkout(order_id):
     try:
         total_cost = connector.get_total_cost(order_id)
         user_id = connector.get_user_id(order_id)
-        response = requests.get(server + 'payment/pay/'+ str(user_id) +'/' \
+        response = requests.get(payment_host + 'payment/pay/'+ str(user_id) +'/' \
             + str(order_id))
         items = connector.get_items(order_id)
         for item in items:
-            requests.get(server + 'stock/subtract/'+ str(item) +'/' \
+            requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
                 + str(1))
         return jsonify({'status':'success'})
     except:
