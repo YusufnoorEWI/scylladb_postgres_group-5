@@ -1,0 +1,23 @@
+version: "2.4"
+
+services:
+  scylla_stock:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: "--smp 1 --overprovisioned 1"
+  stock_service:
+    image: "stock_service:latest"
+    depends_on:
+      - scylla_stock
+    networks:
+      - our_network
+    build:
+      context: "./stock_service"
+    ports:
+      - "8000:8000"
+
+networks:
+  our_network:
+    driver: "bridge"
+    name: "our_network"

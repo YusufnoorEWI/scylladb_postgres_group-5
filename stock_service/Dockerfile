@@ -1,0 +1,13 @@
+FROM python:3.8-slim-buster
+
+ENV DB_HOST "scylla_stock"
+
+COPY . /stock_service
+
+WORKDIR /stock_service
+
+RUN pip install -r requirements.txt
+
+ENTRYPOINT ["gunicorn"]
+
+CMD ["--bind", "0.0.0.0:8000", "service:app"]
