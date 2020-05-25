@@ -2,11 +2,10 @@ version: "2.4"
 
 services:
   scylla_stock:
-    container_name: "scylla_stock"
     image: scylladb/scylla
     networks:
       - our_network
-    command: "--smp 1"
+    command: "--smp 1 --overprovisioned 1"
   stock_service:
     image: "stock_service:latest"
     depends_on:
@@ -17,7 +16,6 @@ services:
       context: "./stock_service"
     ports:
       - "8000:8000"
-    restart: always
 
 networks:
   our_network:
