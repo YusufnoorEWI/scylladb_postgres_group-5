@@ -4,7 +4,6 @@ from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
-from cassandra.cluster import NoHostAvailable
 
 from stock_service.stock_item import StockItem
 
