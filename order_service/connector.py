@@ -91,25 +91,14 @@ class ScyllaConnector:
         order = self.get_order(order_id)
         try:
             order.items_list.remove(item_id)
+            order.total_cost -= item_price
         except ValueError:
-            assert True, 'Item not in order'
-        order.total_cost -= item_price
-        assert order.total_cost < 0, 'Total cost < 0'
+            raise ValueError(f"Remove item {item_id} from order {order_id} failed")
+        if order.total_cost < 0:
+            raise ValueError(f"Total cost of order {order_id} is smaller than 0")
         OrderItem.update(order)
         return order.items_list
     
-    def get_paid(self, order_id):
+    def get_order_info(self, order_id):
         order = self.get_order(order_id)
-        return order.paid
-    
-    def get_items(self, order_id):
-        order = self.get_order(order_id)
-        return order.items_list
-
-    def get_user_id(self, order_id):
-        order = self.get_order(order_id)
-        return order.user_id
-    
-    def get_total_cost(self, order_id):
-        order = self.get_order(order_id)
-        return order.total_cost
+        return order.paid, order.items_list, order.user_id, order.total_cost

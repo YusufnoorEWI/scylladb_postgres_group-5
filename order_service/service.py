@@ -12,18 +12,11 @@ from order_service.connector import ScyllaConnector
 
 app = Flask(__name__)
 connector = ScyllaConnector()
-try:
-    user_host = os.getenv('user')
-except:
-    user_host = 'http://127.0.0.1:5000/'
-try:
-    stock_host = os.getenv('stock')
-except:
-    stock_host = = 'http://127.0.0.1:5000/'
-try:
-    payment_host = os.getenv('payment')
-    payment_host = = 'http://127.0.0.1:5000/'
-    
+
+user_host = os.getenv('user', 'http://127.0.0.1:5000/')
+stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
+payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
+   
 @app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     '''
@@ -31,34 +24,32 @@ def create_order(user_id):
    
     return: the order’s id
     '''
-    try:
-        response = requests.get(user_host + 'users/find/'+ str(user_id))
-        order_id = connector.create_order((user_id))
-        response = {
-            "order_id": order_id
-        }
-        return jsonify(response)
-    except InvalidOperation:
+    response = requests.get(user_host + 'users/find/'+ str(user_id))
+    if response.ok == False:
         abort(404)
+    order_id = connector.create_order(user_id)
+    response = {
+        "order_id": order_id
+    }
+    return jsonify(response)
+    
 
-@app.route('/order/delete/<order_id>', methods=['DELETE'])
+@app.route('/order/remove/<order_id>', methods=['DELETE'])
 def delete_order(order_id):
     '''
     deletes an order by ID
     '''
     try:
         connector.delete_order(escape(order_id))
-    except InvalidOperation:
+    except ValueError:
         abort(404)
     return jsonify({"success":True}), 200
 
 @app.route('/order/find/<order_id>', methods=['GET'])
 def retrieve_order(order_id):
     try:
-        order_paid = connector.get_paid(escape(order_id))
-        order_items = connector.get_items(escape(order_id))
-        order_userid = connector.get_user_id(escape(order_id))
-        order_totalcost = connector.get_total_cost(escape(order_id))
+        order_paid, order_items, order_userid,\
+        order_totalcost = connector.get_order_info(escape(order_id))
         response = {
             "order_id": order_id,
             "paid": str(order_paid),
@@ -98,14 +89,19 @@ def checkout(order_id):
     '''
     #BUG: completely have no idea on how to call payment serv
     try:
-        total_cost = connector.get_total_cost(order_id)
+        order_paid, order_items, order_userid,\
+        totalcost = connector.get_order_info(escape(order_id))
         user_id = connector.get_user_id(order_id)
         response = requests.get(payment_host + 'payment/pay/'+ str(user_id) +'/' \
             + str(order_id))
+        if response.ok is False:
+            abort(404)
         items = connector.get_items(order_id)
         for item in items:
-            requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
+            response = requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
                 + str(1))
+            if response.ok is False:
+                abort(404)
         return jsonify({'status':'success'})
     except:
         return jsonify({'status':'fail'})
