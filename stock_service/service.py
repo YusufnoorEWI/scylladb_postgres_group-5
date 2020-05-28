@@ -5,14 +5,19 @@ import os
 
 from flask import Flask, abort, jsonify
 from markupsafe import escape
+from stock_service.connector import ScyllaConnector, PostgresConnector
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from stock_service.connector import ScyllaConnector
-
 app = Flask(__name__)
 db_host = os.getenv("DB_HOST", "127.0.0.1")
-connector = ScyllaConnector(db_host)
+db_user = os.getenv('POSTGRES_USER')
+db_password = os.getenv('POSTGRES_PASSWORD')
+db_port = os.getenv('POSTGRES_PORT')
+db_name = os.getenv('POSTGRES_DB')
+
+# connector = ScyllaConnector(db_host)
+connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
 
 
 @app.route('/stock/find/<item_id>', methods=['GET'])
@@ -69,7 +74,7 @@ def add_amount(item_id, number):
 
 @app.route('/stock/create/<price>', methods=['POST'])
 def create_item(price):
-    """Creates an item with the price defined in the request body.
+    """Creates an item with the specified price.
 
     :return: the id of the created item
     """
