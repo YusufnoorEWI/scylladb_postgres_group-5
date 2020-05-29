@@ -81,7 +81,6 @@ class ScyllaConnector:
     @staticmethod
     def get_order(order_id):
         """Retrieves the item from the database by its id.
-
         :param item_id: the id of the item
         :raises ValueError: if the item with item_id does not exist or if the format of the item_id is invalid
         :return: the item with id item_id
