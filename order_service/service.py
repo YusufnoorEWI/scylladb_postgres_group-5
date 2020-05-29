@@ -1,22 +1,31 @@
-from decimal import Decimal
-
 import requests
 import sys
 import os
 
+from _decimal import InvalidOperation
+from decimal import Decimal
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from order_service.connector import ScyllaConnector
+from order_service.connector import ScyllaConnector, PostgresConnector
 
 app = Flask(__name__)
-connector = ScyllaConnector()
+db_host = os.getenv("DB_HOST", "127.0.0.1")
+db_user = os.getenv('POSTGRES_USER')
+db_password = os.getenv('POSTGRES_PASSWORD')
+db_port = os.getenv('POSTGRES_PORT')
+db_name = os.getenv('POSTGRES_DB')
 
-user_host = os.getenv('USERS_SERVICE', 'http://127.0.0.1:5000/')
-stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:5000/')
-payment_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:5000/')
-
-@app.route('/orders/create/<user_id>', methods=['POST'])
+connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
+# app = Flask(__name__)
+# connector = ScyllaConnector()
+# 
+# user_host = os.getenv('user', 'http://127.0.0.1:5000/')
+# stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
+# payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
+   
+@app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     '''
     creates an order for the given user, and returns an order_id
@@ -31,9 +40,9 @@ def create_order(user_id):
         "order_id": order_id
     }
     return jsonify(response)
+    
 
-
-@app.route('/orders/remove/<order_id>', methods=['DELETE'])
+@app.route('/order/remove/<order_id>', methods=['DELETE'])
 def delete_order(order_id):
     '''
     deletes an order by ID
@@ -44,7 +53,7 @@ def delete_order(order_id):
         abort(404)
     return jsonify({"success":True}), 200
 
-@app.route('/orders/find/<order_id>', methods=['GET'])
+@app.route('/order/find/<order_id>', methods=['GET'])
 def retrieve_order(order_id):
     try:
         order_paid, order_items, order_userid,\
@@ -52,7 +61,7 @@ def retrieve_order(order_id):
         response = {
             "order_id": order_id,
             "paid": str(order_paid),
-            "items": order_items,
+            "items": ' '.join(order_items),
             "user_id": order_userid,
             "total_cost": str(order_totalcost)
         }
@@ -60,19 +69,19 @@ def retrieve_order(order_id):
     except ValueError:
         abort(404)
 
-@app.route('/orders/addItem/<order_id>/<item_id>', methods=['POST'])
+@app.route('/order/addItem/<order_id>/<item_id>', methods=['POST'])
 def add_item(order_id, item_id):
     try:
         item_in, price = connector.find_item(order_id, item_id)
         if not item_in:
             response = requests.get(stock_host + 'stock/find/'+ str(item_id))
-            price = Decimal(response.json()['price'])
+            price = response['price']
         item_num = connector.add_item(order_id, item_id, price)
         return jsonify({'item_amount':str(item_num)})
     except ValueError:
         abort(404)
 
-@app.route('/orders/removeItem/<order_id>/<item_id>', methods=['DELETE'])
+@app.route('/order/removeItem/<order_id>/<item_id>', methods=['DELETE'])
 def remove_item(order_id, item_id):
     try:
         item_in, price = connector.find_item(order_id, item_id)
@@ -83,7 +92,7 @@ def remove_item(order_id, item_id):
     except ValueError:
         abort(404)
 
-@app.route('/orders/checkout/<order_id>', methods=['POST'])
+@app.route('/order/checkout/<order_id>', methods=['POST'])
 def checkout(order_id):
     ''' 
     makes the payment (via calling the payment service), subtracts 
@@ -92,50 +101,21 @@ def checkout(order_id):
 
     '''
     try:
-        order_paid, order_items, user_id, totalcost = connector.get_order_info(escape(order_id))
-
-        pay_order(user_id, order_id, totalcost)
-        reserve_items(order_id, user_id, order_items)
+        order_paid, order_items, order_userid,\
+        totalcost = connector.get_order_info(escape(order_id))
+        response = requests.post(payment_host + 'payment/pay/'+ str(user_id) +'/' \
+            + str(order_id)+'/'+str(totalcost))
+        if response.ok is False:
+            abort(404)
+        
+        for item in order_items:
+            item_num = connector.get_item_num(order_id=order_userid, item_id=item.item_id)
+            response = requests.post(stock_host + 'stock/subtract/'+ str(item) +'/' \
+                + str(item_num))
+            if response.ok is False:
+                abort(404)
         connector.set_paid(order_id=order_id)
-
-        return jsonify({'status': 'success'})
-    except ValueError as error:
-        abort(400, error.args[0])
-
-
-def pay_order(user_id, order_id, amount):
-    response = requests.post(f'{payment_host}payment/pay/{user_id}/{order_id}/{amount}')
-    if not response.ok:
-        raise ValueError("Not enough credit")
-
-
-def rollback_payment(user_id, order_id):
-    return requests.post(f'{payment_host}payment/cancel/{user_id}/{order_id}')
-
-
-def reserve_item(item_id, number):
-    return requests.post(f'{stock_host}stock/subtract/{item_id}/{number}')
-
-
-def reserve_items(order_id, user_id, items):
-    reserved_items = []
-
-    for item in items:
-        item_num = connector.get_item_num(order_id=order_id, item_id=item)
-        response = reserve_item(item, item_num)
-        if response.ok:
-            reserved_items.append(item)
-        else:
-            rollback_payment(user_id, order_id)
-            rollback_items(order_id, reserved_items)
-            raise ValueError("Not enough stock")
-
-
-def rollback_item(item_id, number):
-    return requests.post(f'{stock_host}stock/add/{item_id}/{number}')
-
-
-def rollback_items(order_id, item_ids):
-    for item_id in item_ids:
-        number = connector.get_item_num(order_id=order_id, item_id=item_id)
-        rollback_item(item_id, number)
+        return jsonify({'status':'success'})
+    except ValueError:
+        return jsonify({'status':'fail'})
+    
