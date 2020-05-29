@@ -8,14 +8,22 @@ from decimal import Decimal
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from order_service.connector import ScyllaConnector
+from order_service.connector import ScyllaConnector, PostgresConnector
 
 app = Flask(__name__)
-connector = ScyllaConnector()
+db_host = os.getenv("DB_HOST", "127.0.0.1")
+db_user = os.getenv('POSTGRES_USER')
+db_password = os.getenv('POSTGRES_PASSWORD')
+db_port = os.getenv('POSTGRES_PORT')
+db_name = os.getenv('POSTGRES_DB')
 
-user_host = os.getenv('user', 'http://127.0.0.1:5000/')
-stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
-payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
+connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
+# app = Flask(__name__)
+# connector = ScyllaConnector()
+# 
+# user_host = os.getenv('user', 'http://127.0.0.1:5000/')
+# stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
+# payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
    
 @app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
