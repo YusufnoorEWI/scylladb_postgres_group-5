@@ -8,6 +8,7 @@ from cassandra.cqlengine.query import QueryException
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from order_service.order_item import OrderItem
+from order_service.order import Order
 
 
 class ScyllaConnector:
