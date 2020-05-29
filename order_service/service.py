@@ -64,18 +64,24 @@ def retrieve_order(order_id):
 @app.route('/order/addItem/<order_id>/<item_id>', methods=['POST'])
 def add_item(order_id, item_id):
     try:
-        response = requests.get(stock_host + 'stock/find/'+ str(item_id))
-        item_list = connector.add_item(order_id, item_id, response['price'])
-        return jsonify({'item_list':str(' '.join(str(k) for k in item_list))})
+        item_in, price = connector.find_item(order_id, item_id)
+        if not item_in:
+            response = requests.get(stock_host + 'stock/find/'+ str(item_id))
+            price = response['price']
+        item_num = connector.add_item(order_id, item_id, price)
+        return jsonify({'item_amount':str(item_num)})
     except ValueError:
         abort(404)
 
 @app.route('/order/removeItem/<order_id>/<item_id>', methods=['DELETE'])
 def remove_item(order_id, item_id):
     try:
-        response = requests.get(stock_host + 'stock/find/'+ str(item_id))
-        item_list = connector.remove_item(order_id, item_id, response['price'])
-        return jsonify({'item_list':str(' '.join(str(k) for k in item_list))})
+        item_in, price = connector.find_item(order_id, item_id)
+        if not item_in:
+            response = requests.get(stock_host + 'stock/find/'+ str(item_id))
+            price = response['price']
+        item_num = connector.remove_item(order_id, item_id, price)
+        return jsonify({'item_list':str(item_num)})
     except ValueError:
         abort(404)
 
@@ -87,7 +93,6 @@ def checkout(order_id):
     failure).
 
     '''
-    #BUG: completely have no idea on how to call payment serv
     try:
         order_paid, order_items, order_userid,\
         totalcost = connector.get_order_info(escape(order_id))
@@ -96,12 +101,14 @@ def checkout(order_id):
             + str(order_id))
         if response.ok is False:
             abort(404)
-        items = connector.get_items(order_id)
-        for item in items:
+        
+        for item in order_items:
+            item_num = connector.get_item_num(order_id=order_id, item_id=item_id)
             response = requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
-                + str(1))
+                + str(item_num))
             if response.ok is False:
                 abort(404)
+        connector.set_paid(order_id=order_id)
         return jsonify({'status':'success'})
     except:
         return jsonify({'status':'fail'})

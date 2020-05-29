@@ -15,7 +15,7 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['192.168.99.100']).connect()
+        session = Cluster(['192.168.99.100']).connect()#
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
@@ -23,6 +23,8 @@ class ScyllaConnector:
 
         connection.setup(['192.168.99.100'], "wdm")
         sync_table(OrderItem)
+        sync_table(Order)
+        #Also sync the order table, retrieve everything.
 
     @staticmethod
     def create_order(user_id):
@@ -31,8 +33,7 @@ class ScyllaConnector:
         :param price: the user id
         :return: the id of the order
         """
-        order = OrderItem.create(user_id=user_id, items_list=[],\
-             paid=False, total_cost=0)
+        order = Order.create(user_id=user_id, paid=False)
         return order.order_id
 
     @staticmethod
@@ -42,7 +43,8 @@ class ScyllaConnector:
 
         '''
         try:
-            order = OrderItem.get(order_id=order_id).delete()
+            OrderItem.get(order_id=order_id).delete()
+            Order.get(order_id=order_id).delete()
         except QueryException:
             raise ValueError(f"Order with id {order_id} not found") 
 
@@ -55,7 +57,7 @@ class ScyllaConnector:
         :return: the item with id item_id
         """
         try:
-            order = OrderItem.get(order_id=order_id)
+            order = Order.get(order_id=order_id)
         except QueryException:
             raise ValueError(f"Order with id {order_id} not found")
         except ValidationError:
@@ -73,12 +75,14 @@ class ScyllaConnector:
         """
         if item_price < 0:
             raise ValueError(f"Item price {item_price} is not valid")
-        order = self.get_order(order_id)
-        order.items_list.append(item_id)
-        #Could try to use stock service to get it
-        order.total_cost += item_price 
-        OrderItem.update(order)
-        return order.items_list
+        try:
+            item = OrderItem.get(item_id=item_id, order_id=order_id)
+            item.item_num += 1
+            OrderItem.update(item)
+        except QueryException:
+            item = OrderItem.create(item_id=item_id, order_id=order_id, \
+                item_price=item_price, item_num=1)
+        return item.item_num
 
     def remove_item(self, order_id, item_id, item_price):
         """Removes the given item from the given order
@@ -88,17 +92,46 @@ class ScyllaConnector:
         :raises AssertionError: if the item is not in the order
         :return: the list of the item in stock
         """
-        order = self.get_order(order_id)
+        if item_price < 0:
+            raise ValueError(f"Item price {item_price} is not valid")
         try:
-            order.items_list.remove(item_id)
-            order.total_cost -= item_price
-        except ValueError:
-            raise ValueError(f"Remove item {item_id} from order {order_id} failed")
-        if order.total_cost < 0:
-            raise ValueError(f"Total cost of order {order_id} is smaller than 0")
-        OrderItem.update(order)
-        return order.items_list
+            item = OrderItem.get(item_id=item_id, order_id=order_id)
+            item.item_num -= 1
+            OrderItem.update(item)
+        except QueryException:
+            raise ValueError(f"Order {order_id} does not contain item {item_id}")
+        tmp = ite.item_num
+        if item_price == 0:
+            OrderItem.get(item_id=item_id, order_id=order_id).delete()
+        return tmp
     
     def get_order_info(self, order_id):
         order = self.get_order(order_id)
-        return order.paid, order.items_list, order.user_id, order.total_cost
+        items = OrderItem.get(order_id=order_id)
+        items = items[:]
+        total_cost = 0
+        item_list = []
+        for item in items:
+            total_cost += item.item_num * item.price
+            item_list.append(item.item_id)
+        return order.paid, items_list, order.user_id, total_cost
+    
+    def find_item(self, order_id, item_id):
+        try:
+            item = OrderItem.get(item_id=item_id, order_id=order_id)
+            return True, item.price
+        except QueryException:
+            return False, None
+    
+    def get_item_num(self, order_id, item_id):
+        try:
+            item = OrderItem.get(item_id=item_id, order_id=order_id)
+            return item.item_num
+        except QueryException:
+            raise ValueError(f"Order {order_id} does not contain item {item_id}")
+
+    def set_paid(self, order_id):
+        order = self.get_order(order_id)
+        order.paid = True
+        Order.update(order)
+        return True
