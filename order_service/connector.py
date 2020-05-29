@@ -81,7 +81,6 @@ class ScyllaConnector:
     @staticmethod
     def get_order(order_id):
         """Retrieves the item from the database by its id.
-
         :param item_id: the id of the item
         :raises ValueError: if the item with item_id does not exist or if the format of the item_id is invalid
         :return: the item with id item_id
@@ -120,7 +119,7 @@ class ScyllaConnector:
         :param item_id: the id of the item
         :param Order_id: the id of the order
         :raises AssertionError: if the item is not in the order
-        :return: the number of the item in stock
+        :return: the list of the item in stock
         """
         if item_price < 0:
             raise ValueError(f"Item price {item_price} is not valid")
@@ -136,20 +135,15 @@ class ScyllaConnector:
         return tmp
     
     def get_order_info(self, order_id):
-        order = ScyllaOrder.get(order_id=order_id)
-        try:
-            items = OrderItem.get(order_id=order_id)
-            items = items[:]
-            total_cost = 0
-            item_list = []
-            for item in items:
-                total_cost += item.item_num * item.price
-                item_list.append(item.item_id)
-        except:
-            # When there's no item in the order
-            item_list = []
-            total_cost = 0
-        return order.paid, item_list, order.user_id, total_cost
+        order = self.get_order(order_id)
+        items = ScyllaOrderItem.get(order_id=order_id)
+        items = items[:]
+        total_cost = 0
+        item_list = []
+        for item in items:
+            total_cost += item.item_num * item.price
+            item_list.append(item.item_id)
+        return order.paid, items_list, order.user_id, total_cost
     
     def find_item(self, order_id, item_id):
         try:
@@ -227,10 +221,10 @@ class PostgresConnector:
         try:
             item = self.db_session.query(PostgresOrderItem)\
                 .filter_by(order_id=order_id, item_id=item_id).one()
+        except NoResultFound:
+            raise ValueError(f"Item {item_id} in order {order_id} not found")
         except DataError:
             raise ValueError(f"Item {item_id} in order {order_id} is not a valid id")
-        except:
-            raise ValueError(f"Item {item_id} in order {order_id} not found")
         return item
 
     def delete_order(self, order_id):
