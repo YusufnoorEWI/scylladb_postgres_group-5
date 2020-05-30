@@ -96,20 +96,19 @@ def checkout(order_id):
     try:
         order_paid, order_items, order_userid,\
         totalcost = connector.get_order_info(escape(order_id))
-        user_id = connector.get_user_id(order_id)
         response = requests.get(payment_host + 'payment/pay/'+ str(user_id) +'/' \
             + str(order_id))
         if response.ok is False:
             abort(404)
         
         for item in order_items:
-            item_num = connector.get_item_num(order_id=order_id, item_id=item_id)
+            item_num = connector.get_item_num(order_id=order_userid, item_id=item.item_id)
             response = requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
                 + str(item_num))
             if response.ok is False:
                 abort(404)
         connector.set_paid(order_id=order_id)
         return jsonify({'status':'success'})
-    except:
+    except ValueError:
         return jsonify({'status':'fail'})
     

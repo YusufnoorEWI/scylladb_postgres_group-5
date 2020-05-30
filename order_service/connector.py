@@ -16,13 +16,13 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['192.168.99.100']).connect()#
+        session = Cluster(['localhost']).connect()#
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
 
-        connection.setup(['192.168.99.100'], "wdm")
+        connection.setup(['localhost'], "wdm")
         sync_table(OrderItem)
         sync_table(Order)
         #Also sync the order table, retrieve everything.
@@ -44,8 +44,9 @@ class ScyllaConnector:
 
         '''
         try:
-            OrderItem.get(order_id=order_id).delete()
             Order.get(order_id=order_id).delete()
+            # BUG: should I delete it?
+            # OrderItem.get(order_id=order_id).delete()
         except QueryException:
             raise ValueError(f"Order with id {order_id} not found") 
 
@@ -82,7 +83,7 @@ class ScyllaConnector:
             OrderItem.update(item)
         except QueryException:
             item = OrderItem.create(item_id=item_id, order_id=order_id, \
-                item_price=item_price, item_num=1)
+                price=item_price, item_num=1)
         return item.item_num
 
     def remove_item(self, order_id, item_id, item_price):
@@ -101,21 +102,26 @@ class ScyllaConnector:
             OrderItem.update(item)
         except QueryException:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
-        tmp = ite.item_num
+        tmp = item.item_num
         if item_price == 0:
             OrderItem.get(item_id=item_id, order_id=order_id).delete()
         return tmp
     
     def get_order_info(self, order_id):
-        order = self.get_order(order_id)
-        items = OrderItem.get(order_id=order_id)
-        items = items[:]
-        total_cost = 0
-        item_list = []
-        for item in items:
-            total_cost += item.item_num * item.price
-            item_list.append(item.item_id)
-        return order.paid, items_list, order.user_id, total_cost
+        order = Order.get(order_id=order_id)
+        try:
+            items = OrderItem.get(order_id=order_id)
+            items = items[:]
+            total_cost = 0
+            item_list = []
+            for item in items:
+                total_cost += item.item_num * item.price
+                item_list.append(item.item_id)
+        except:
+            # When there's no item in the order
+            item_list = []
+            total_cost = 0
+        return order.paid, item_list, order.user_id, total_cost
     
     def find_item(self, order_id, item_id):
         try:
