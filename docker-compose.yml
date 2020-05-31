@@ -1,23 +1,29 @@
-version: "2.4"
+version: "3"
 
 services:
   scylla_stock:
     image: scylladb/scylla
-    networks:
-      - our_network
     command: "--smp 1 --overprovisioned 1"
   stock_service:
     image: "stock_service:latest"
     depends_on:
       - scylla_stock
-    networks:
-      - our_network
     build:
       context: "./stock_service"
     ports:
       - "8000:8000"
 
-networks:
-  our_network:
-    driver: "bridge"
-    name: "our_network"
+  scylla_payment:
+    image: scylladb/scylla
+    command: "--smp 1 --overprovisioned 1"
+  payment_service:
+    image: 'payment_service:latest'
+    environment:
+      - USER_SERVICE_URL=""
+    restart: always
+    depends_on:
+      - scylla_payment
+    build:
+      context: "./payment_service"
+    ports:
+    - "5000:5000"
