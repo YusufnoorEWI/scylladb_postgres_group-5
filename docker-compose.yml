@@ -1,4 +1,4 @@
-version: "2.4"
+version: "3"
 
 services:
   scylla_stock:
@@ -10,12 +10,24 @@ services:
     image: "stock_service:latest"
     depends_on:
       - scylla_stock
-    networks:
-      - our_network
     build:
       context: "./stock_service"
     ports:
       - "8000:8000"
+
+  scylla_payment:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: "--smp 1 --overprovisioned 1"
+  payment_service:
+    image: 'payment_service:latest'
+    depends_on:
+      - scylla_payment
+    build:
+      context: "./payment_service"
+    ports:
+    - "8001:8000"
 
 networks:
   our_network:
