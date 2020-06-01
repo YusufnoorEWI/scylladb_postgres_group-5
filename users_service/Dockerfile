@@ -1,10 +1,10 @@
 FROM python:3.8-slim-buster
 
-ENV DB_HOST "scylla_payment"
+ENV DB_HOST "scylla_users"
 
-COPY . /payment_service
+COPY . /users_service
 
-WORKDIR /payment_service
+WORKDIR /users_service
 
 RUN pip install -r requirements.txt
 

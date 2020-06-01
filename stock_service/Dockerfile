@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 ENTRYPOINT ["gunicorn"]
 
-CMD ["--bind", "0.0.0.0:8000", "service:app"]
+CMD ["--bind", "0.0.0.0:80", "service:app"]
