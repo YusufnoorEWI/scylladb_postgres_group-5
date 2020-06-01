@@ -45,8 +45,6 @@ class ScyllaConnector:
         '''
         try:
             Order.get(order_id=order_id).delete()
-            # BUG: should I delete it?
-            # OrderItem.get(order_id=order_id).delete()
         except QueryException:
             raise ValueError(f"Order with id {order_id} not found") 
 
@@ -92,7 +90,7 @@ class ScyllaConnector:
         :param item_id: the id of the item
         :param Order_id: the id of the order
         :raises AssertionError: if the item is not in the order
-        :return: the list of the item in stock
+        :return: the number of the item in stock
         """
         if item_price < 0:
             raise ValueError(f"Item price {item_price} is not valid")
@@ -103,7 +101,7 @@ class ScyllaConnector:
         except QueryException:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
         tmp = item.item_num
-        if item_price == 0:
+        if item.item_num == 0:
             OrderItem.get(item_id=item_id, order_id=order_id).delete()
         return tmp
     
