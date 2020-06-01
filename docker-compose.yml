@@ -1,6 +1,19 @@
 version: "3.8"
 
 services:
+  proxy:
+    image: "proxy:latest"
+    networks:
+     - our_network
+    build:
+     context: "./proxy"
+    depends_on:
+     - stock_service
+     - payment_service
+     - users_service
+    ports:
+     - "8080:8080"
+
   scylla_stock:
     image: scylladb/scylla
     networks:
@@ -14,8 +27,6 @@ services:
       - scylla_stock
     build:
       context: "./stock_service"
-    ports:
-      - "8000:8000"
 
   scylla_users:
     image: scylladb/scylla
@@ -30,8 +41,6 @@ services:
      - scylla_users
     build:
       context: "./users_service"
-    ports:
-      - "8002:8002"
 
   scylla_payment:
     image: scylladb/scylla
@@ -46,8 +55,6 @@ services:
       - scylla_payment
     build:
       context: "./payment_service"
-    ports:
-    - "8001:8001"
 
 networks:
   our_network:
