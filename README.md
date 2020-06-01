@@ -14,13 +14,15 @@ Now there are multiple options:
 ## Build and run a microservice using docker
 To run a service using docker, a Dockerfile is required like the one in stock_service. Make sure this is the case.
 
-To make life easier for you guys I have defined all the steps of starting services and databases in one single docker-compose.yml file. Now the only thing you should have to do is run `docker-compose up --build --force-recreate`. This however requires you to install docker-compose.
+To make life easier for you guys I have defined all the steps of starting services and databases in one single docker-compose.yml file. Now the only thing you should have to do is run `docker-compose up --build`. This however requires you to install docker-compose.
+
+At this moment 3 services are then reachable from port 8080: stock, payment and users.
 ## Install and run ScyllaDB docker image:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla`
 
 ## Possible bugs and fixes:
 Some machines overprovision scylla inside a docker container. If your scylladb docker container is not working try appending the following: `--smp 2` this will instruct scylladb inside the container to consume less resources. The entire command now looks like this:
-`docker run --name some-scylla -p 9042:9042 -d scylladb/scylla --smp 2`
+`docker run --name some-scylla -p 9042:9042 -d scylladb/scylla --smp 1`
 
 Docker containers communicate to each other using docker networks. By default your dockerized microservice will not be able to communicate with the dockerized database. At some point in time we will have to think about a network between services and databases, but for now the `--network host` flag will suffice.
 More on this here: https://docs.docker.com/network/network-tutorial-standalone/
