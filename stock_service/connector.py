@@ -1,3 +1,4 @@
+import os
 from time import sleep
 
 from cassandra.cluster import Cluster
@@ -11,6 +12,31 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from stock_service.scylla_stock_item import ScyllaStockItem
 from stock_service.postgres_stock_item import Base, PostgresStockItem
+
+
+class ConnectorFactory:
+    def __init__(self):
+        """Initializes a database connector factory with parameters set by the environment variables."""
+        self.db_host = os.getenv("DB_HOST")
+        self.db_type = os.getenv("DATABASE_TYPE")
+        self.postgres_user = os.getenv('POSTGRES_USER')
+        self.postgres_password = os.getenv('POSTGRES_PASSWORD')
+        self.postgres_port = os.getenv('POSTGRES_PORT')
+        self.postgres_name = os.getenv('POSTGRES_DB')
+
+    def get_connector(self):
+        """
+        Returns the connector specified by the DATABASE_TYPE environment variable.
+        :raises ValueError: if DATABASE_TYPE is not a valid database option
+        :return: a PostgresConnector if DATABASE_TYPE is set to postgres,
+        or a ScyllaConnector if DATABASE_TYPE is set to scylla
+        """
+        if self.db_type == 'postgres':
+            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port, self.postgres_name)
+        elif self.db_type == 'scylla':
+            return ScyllaConnector(self.db_host)
+        else:
+            raise ValueError("Invalid database")
 
 
 class ScyllaConnector:

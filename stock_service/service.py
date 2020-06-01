@@ -5,20 +5,13 @@ import os
 
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from stock_service.connector import ScyllaConnector, PostgresConnector
+from stock_service.connector import ConnectorFactory
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 app = Flask(__name__)
-db_host = os.getenv("DB_HOST", "127.0.0.1")
-db_user = os.getenv('POSTGRES_USER')
-db_password = os.getenv('POSTGRES_PASSWORD')
-db_port = os.getenv('POSTGRES_PORT')
-db_name = os.getenv('POSTGRES_DB')
 
-# connector = ScyllaConnector(db_host)
-connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
-
+connector = ConnectorFactory().get_connector()
 
 @app.route('/stock/find/<item_id>', methods=['GET'])
 def find_item(item_id):
