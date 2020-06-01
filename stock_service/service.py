@@ -5,15 +5,13 @@ import os
 
 from flask import Flask, abort, jsonify
 from markupsafe import escape
+from stock_service.connector import ConnectorFactory
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from stock_service.connector import ScyllaConnector
-
 app = Flask(__name__)
-db_host = os.getenv("DB_HOST", "127.0.0.1")
-connector = ScyllaConnector(db_host)
 
+connector = ConnectorFactory().get_connector()
 
 @app.route('/stock/find/<item_id>', methods=['GET'])
 def find_item(item_id):
@@ -69,10 +67,13 @@ def add_amount(item_id, number):
 
 @app.route('/stock/create/<price>', methods=['POST'])
 def create_item(price):
-    """Creates an item with the price defined in the request body.
+    """Creates an item with the specified price.
 
     :return: the id of the created item
     """
+    if Decimal(price) < 0:
+        abort(404)
+
     try:
         item_id = connector.create_item(Decimal(price))
         response = {
