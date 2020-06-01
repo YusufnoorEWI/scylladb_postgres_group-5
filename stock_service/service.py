@@ -71,6 +71,9 @@ def create_item(price):
 
     :return: the id of the created item
     """
+    if Decimal(price) < 0:
+        abort(404)
+
     try:
         item_id = connector.create_item(Decimal(price))
         response = {
