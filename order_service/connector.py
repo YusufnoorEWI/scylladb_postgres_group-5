@@ -95,7 +95,7 @@ class ScyllaConnector:
 
         return order
 
-    def add_item(self, item_id, order_id, item_price):
+    def add_item(self, order_id, item_id, item_price):
         """Adds a given item in the order given
 
 
@@ -112,6 +112,7 @@ class ScyllaConnector:
         except QueryException:
             item = ScyllaOrderItem.create(item_id=item_id, order_id=order_id, \
                 price=item_price, item_num=1)
+            ScyllaOrderItem.update(item)
         return item.item_num
 
     def remove_item(self, order_id, item_id):
@@ -136,7 +137,7 @@ class ScyllaConnector:
     def get_order_info(self, order_id):
         order = ScyllaOrder.get(order_id=order_id)
         try:
-            items = ScyllaOrderItem.get(order_id=order_id)
+            items = ScyllaOrderItem.objects.filter(order_id=order_id).all()
             items = items[:]
             total_cost = 0
             item_list = []
