@@ -12,7 +12,7 @@ db_host = os.getenv("DB_HOST", "127.0.0.1")
 connector = ScyllaConnector(db_host)
 
 
-@app.route('/users/create/', methods=['POST'])
+@app.route('/users/create', methods=['POST'])
 def create():
     """Creates a user with zero initial credit.
 
