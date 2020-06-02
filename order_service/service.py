@@ -97,11 +97,11 @@ def checkout(order_id):
     try:
         order_paid, order_items, order_userid,\
         totalcost = connector.get_order_info(escape(order_id))
-        response = requests.post(payment_host + 'payment/pay/'+ str(user_id) +'/' \
+        response = requests.post(payment_host + 'payment/pay/'+ str(order_userid) +'/' \
             + str(order_id)+'/'+str(totalcost))
         if response.ok is False:
             abort(404)
-        
+
         for item in order_items:
             item = connector.get_order_item(order_id, item)
             item_num = connector.get_item_num(order_id=order_id, item_id=item.item_id)
