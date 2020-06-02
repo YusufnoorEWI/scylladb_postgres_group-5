@@ -3,11 +3,11 @@ from decimal import Decimal
 import sys
 import os
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
 from flask import Flask, abort, jsonify
 from markupsafe import escape
 from stock_service.connector import ConnectorFactory
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 app = Flask(__name__)
 
