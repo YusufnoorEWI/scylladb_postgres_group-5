@@ -25,7 +25,6 @@ class ScyllaConnector:
         connection.setup(['localhost'], "wdm")
         sync_table(OrderItem)
         sync_table(Order)
-        #Also sync the order table, retrieve everything.
 
     @staticmethod
     def create_order(user_id):
@@ -65,7 +64,7 @@ class ScyllaConnector:
 
         return order
 
-    def add_item(self, item_id, order_id, item_price):
+    def add_item(self, order_id, item_id, item_price):
         """Adds a given item in the order given
 
 
@@ -82,6 +81,7 @@ class ScyllaConnector:
         except QueryException:
             item = OrderItem.create(item_id=item_id, order_id=order_id, \
                 price=item_price, item_num=1)
+            OrderItem.update(item)
         return item.item_num
 
     def remove_item(self, order_id, item_id, item_price):
@@ -108,7 +108,7 @@ class ScyllaConnector:
     def get_order_info(self, order_id):
         order = Order.get(order_id=order_id)
         try:
-            items = OrderItem.get(order_id=order_id)
+            items = OrderItem.objects.filter(order_id=order_id).all()
             items = items[:]
             total_cost = 0
             item_list = []
