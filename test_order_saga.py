@@ -4,10 +4,10 @@ from decimal import Decimal
 import requests
 import unittest
 
-user_host = os.getenv('USERS_SERVICE', 'http://127.0.0.1:8080/')
-stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:8080/')
-payment_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:8080/')
-order_host = os.getenv('ORDER_SERVICE', 'http://127.0.0.1:5000/')
+user_host = os.getenv('user', 'http://127.0.0.1:8080/')
+stock_host = os.getenv('stock', 'http://127.0.0.1:8080/')
+payment_host = os.getenv('payment', 'http://127.0.0.1:8080/')
+order_host = os.getenv('order', 'http://127.0.0.1:5000/')
 
 
 def stock_create(price):

@@ -94,22 +94,50 @@ def checkout(order_id):
 
     '''
     try:
-        order_paid, order_items, order_userid,\
-        totalcost = connector.get_order_info(escape(order_id))
-        response = requests.post(payment_host + 'payment/pay/'+ str(order_userid) +'/' \
-            + str(order_id)+'/'+str(totalcost))
-        if response.ok is False:
-            abort(404)
+        order_paid, order_items, user_id, totalcost = connector.get_order_info(escape(order_id))
 
-        for item in order_items:
-            item = connector.get_order_item(order_id, item)
-            item_num = connector.get_item_num(order_id=order_id, item_id=item.item_id)
-            response = requests.post(stock_host + 'stock/subtract/'+ str(item) +'/' \
-                + str(item_num))
-            if response.ok is False:
-                abort(404)
+        pay_order(user_id, order_id, totalcost)
+        reserve_items(order_id, user_id, order_items)
         connector.set_paid(order_id=order_id)
-        return jsonify({'status':'success'})
-    except ValueError:
-        return jsonify({'status':'fail'})
-    
+
+        return jsonify({'status': 'success'})
+    except ValueError as error:
+        abort(400, error.args[0])
+
+
+def pay_order(user_id, order_id, amount):
+    response = requests.post(f'{payment_host}payment/pay/{user_id}/{order_id}/{amount}')
+    if not response.ok:
+        raise ValueError("Not enough credit")
+
+
+def rollback_payment(user_id, order_id):
+    return requests.post(f'{payment_host}payment/cancel/{user_id}/{order_id}')
+
+
+def reserve_item(item_id, number):
+    return requests.post(f'{stock_host}stock/subtract/{item_id}/{number}')
+
+
+def reserve_items(order_id, user_id, items):
+    reserved_items = []
+
+    for item in items:
+        item_num = connector.get_item_num(order_id=order_id, item_id=item)
+        response = reserve_item(item, item_num)
+        if response.ok:
+            reserved_items.append(item)
+        else:
+            rollback_payment(user_id, order_id)
+            rollback_items(order_id, reserved_items)
+            raise ValueError("Not enough stock")
+
+
+def rollback_item(item_id, number):
+    return requests.post(f'{stock_host}stock/add/{item_id}/{number}')
+
+
+def rollback_items(order_id, item_ids):
+    for item_id in item_ids:
+        number = connector.get_item_num(order_id=order_id, item_id=item_id)
+        rollback_item(item_id, number)
