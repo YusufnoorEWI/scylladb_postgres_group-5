@@ -8,13 +8,19 @@ from decimal import Decimal
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from flask import Flask, abort, jsonify
 from markupsafe import escape
-from order_service.connector import ConnectorFactory
+from order_service.connector import ScyllaConnector, PostgresConnector
 
 app = Flask(__name__)
+db_host = os.getenv("DB_HOST", "127.0.0.1")
+db_user = "postgres"#os.getenv('POSTGRES_USER','huangchuanbing')
+db_password = os.getenv('POSTGRES_PASSWORD','mysecretpassword')
+db_port = os.getenv('POSTGRES_PORT','5432')
+db_name = os.getenv('POSTGRES_DB','postgres')
 
-
-connector = ConnectorFactory().get_connector()
-
+connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
+# app = Flask(__name__)
+# connector = ScyllaConnector()
+# 
 user_host = os.getenv('user', 'http://127.0.0.1:5000/')
 stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
 payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
@@ -26,9 +32,9 @@ def create_order(user_id):
    
     return: the order’s id
     '''
-    response = requests.get(user_host + 'users/find/'+ str(user_id))
-    if response.ok == False:
-        abort(404)
+    #response = requests.get(user_host + 'users/find/'+ str(user_id))
+    #if response.ok == False:
+    #    abort(404)
     order_id = connector.create_order(user_id)
     response = {
         "order_id": order_id
