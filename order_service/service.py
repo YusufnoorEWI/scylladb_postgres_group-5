@@ -26,9 +26,9 @@ def create_order(user_id):
    
     return: the order’s id
     '''
-    response = requests.get(user_host + 'users/find/'+ str(user_id))
-    if response.ok == False:
-        abort(404)
+    #response = requests.get(user_host + 'users/find/'+ str(user_id))
+    #if response.ok == False:
+    #    abort(404)
     order_id = connector.create_order(user_id)
     response = {
         "order_id": order_id
