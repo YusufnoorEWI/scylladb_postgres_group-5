@@ -18,19 +18,41 @@ from order_service.postgress_order import PostgresOrder, Base_order
 
 
 
+class ConnectorFactory:
+    def __init__(self):
+        """Initializes a database connector factory with parameters set by the environment variables."""
+        self.db_host = os.getenv("DB_HOST", "127.0.0.1")
+        self.db_type = os.getenv("DATABASE_TYPE",'postgres')
+        self.postgres_user = os.getenv('POSTGRES_USER', 'postgres')
+        self.postgres_password = os.getenv('POSTGRES_PASSWORD','mysecretpassword')
+        self.postgres_port = os.getenv('POSTGRES_PORT', '5432')
+        self.postgres_name = os.getenv('POSTGRES_DB','postgres')
+
+    def get_connector(self):
+        """
+        Returns the connector specified by the DATABASE_TYPE environment variable.
+        :raises ValueError: if DATABASE_TYPE is not a valid database option
+        :return: a PostgresConnector if DATABASE_TYPE is set to postgres,
+        or a ScyllaConnector if DATABASE_TYPE is set to scylla
+        """
+        if self.db_type == 'postgres':
+            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port, self.postgres_name)
+        elif self.db_type == 'scylla':
+            return ScyllaConnector(self.db_host)
+        else:
+            raise ValueError("Invalid database")
 
 class ScyllaConnector:
-    def __init__(self):
+    def __init__(self, host):
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster(['localhost']).connect()#
+        session = Cluster([host]).connect()#
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
             """)
-
-        connection.setup(['localhost'], "wdm")
+        connection.setup([host], "wdm")
         sync_table(ScyllaOrderItem)
         sync_table(ScyllaOrder)
         #Also sync the order table, retrieve everything.
