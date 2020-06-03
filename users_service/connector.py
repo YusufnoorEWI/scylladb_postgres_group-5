@@ -4,8 +4,39 @@ from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
 from time import sleep
 
-from .users_item import Users
+from sqlalchemy import create_engine
+from sqlalchemy.exc import DataError
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
+import os
+
+
+from .scylla_user import ScyllaUser
+
+class ConnectorFactory:
+    def __init__(self):
+        """Initializes a database connector factory with parameters set by the environment variables."""
+        self.db_host = os.getenv("DB_HOST")
+        self.db_type = os.getenv("DATABASE_TYPE")
+        self.postgres_user = os.getenv('POSTGRES_USER')
+        self.postgres_password = os.getenv('POSTGRES_PASSWORD')
+        self.postgres_port = os.getenv('POSTGRES_PORT')
+        self.postgres_name = os.getenv('POSTGRES_DB')
+
+    def get_connector(self):
+        """
+        Returns the connector specified by the DATABASE_TYPE environment variable.
+        :raises ValueError: if DATABASE_TYPE is not a valid database option
+        :return: a PostgresConnector if DATABASE_TYPE is set to postgres,
+        or a ScyllaConnector if DATABASE_TYPE is set to scylla
+        """
+        if self.db_type == 'postgres':
+            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port, self.postgres_name)
+        elif self.db_type == 'scylla':
+            return ScyllaConnector(self.db_host)
+        else:
+            raise ValueError("Invalid database")
 
 class ScyllaConnector:
     def __init__(self, host):
@@ -24,7 +55,7 @@ class ScyllaConnector:
             """)
 
         connection.setup([host], "wdm")
-        sync_table(Users)
+        sync_table(ScyllaUser)
 
     @staticmethod
     def create():
@@ -32,7 +63,7 @@ class ScyllaConnector:
 
         :return: the id of the created user
         """
-        user = Users.create(credit=0.0)
+        user = ScyllaUser.create(credit=0.0)
         return user.id
 
     @staticmethod
@@ -42,7 +73,7 @@ class ScyllaConnector:
         :raises ValueError: if there is no such user
         """
         try:
-            Users.get(id=user_id).delete()
+            ScyllaUser.get(id=user_id).delete()
         except QueryException:
             raise ValueError(f"User with id {user_id} not found")
 
@@ -55,7 +86,7 @@ class ScyllaConnector:
         :return: the user with id user_id
         """
         try:
-            item = Users.get(id=user_id)
+            item = ScyllaUser.get(id=user_id)
         except QueryException:
             raise ValueError(f"User with id {user_id} not found")
         except ValidationError:
@@ -72,7 +103,7 @@ class ScyllaConnector:
         """
         user = self.get_user(user_id)
         user.credit = user.credit + number
-        Users.update(user)
+        ScyllaUser.update(user)
         return user.credit
 
     def subtract_amount(self, user_id, number):
@@ -88,5 +119,17 @@ class ScyllaConnector:
         user.credit = user.credit - number
         assert user.credit >= 0.0, 'User credit cannot be negative'
 
-        Users.update(user)
+        ScyllaUser.update(user)
         return user.credit
+
+class PostgresConnector:
+    def __init__(self, db_user, db_password, db_host, db_port, db_name):
+        """Establishes a connection to the PostgreSQL database, and creates or updates the stock_item table.
+        """
+        self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
+                                    convert_unicode=True)
+        self.db_session = scoped_session(sessionmaker(autocommit=False,
+                                                      autoflush=False,
+                                                      bind=self.engine))
+        Base.query = self.db_session.query_property()
+        Base.metadata.create_all(bind=self.engine)
