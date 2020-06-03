@@ -12,19 +12,19 @@ from order_service.connector import ScyllaConnector, PostgresConnector
 
 app = Flask(__name__)
 db_host = os.getenv("DB_HOST", "127.0.0.1")
-db_user = os.getenv('POSTGRES_USER')
-db_password = os.getenv('POSTGRES_PASSWORD')
-db_port = os.getenv('POSTGRES_PORT')
-db_name = os.getenv('POSTGRES_DB')
+db_user = "postgres"#os.getenv('POSTGRES_USER','huangchuanbing')
+db_password = os.getenv('POSTGRES_PASSWORD','mysecretpassword')
+db_port = os.getenv('POSTGRES_PORT','5432')
+db_name = os.getenv('POSTGRES_DB','postgres')
 
 connector = PostgresConnector(db_user, db_password, db_host, db_port, db_name)
 # app = Flask(__name__)
 # connector = ScyllaConnector()
 # 
-# user_host = os.getenv('user', 'http://127.0.0.1:5000/')
-# stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
-# payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
-   
+user_host = os.getenv('user', 'http://127.0.0.1:5000/')
+stock_host = os.getenv('stock', 'http://127.0.0.1:5000/')
+payment_host = os.getenv('payment', 'http://127.0.0.1:5000/')
+ 
 @app.route('/order/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     '''
@@ -32,9 +32,9 @@ def create_order(user_id):
    
     return: the order’s id
     '''
-    response = requests.get(user_host + 'users/find/'+ str(user_id))
-    if response.ok == False:
-        abort(404)
+    #response = requests.get(user_host + 'users/find/'+ str(user_id))
+    #if response.ok == False:
+    #    abort(404)
     order_id = connector.create_order(user_id)
     response = {
         "order_id": order_id
@@ -61,7 +61,7 @@ def retrieve_order(order_id):
         response = {
             "order_id": order_id,
             "paid": str(order_paid),
-            "items": ' '.join(order_items),
+            "items": ' '.join(str(order_items)),
             "user_id": order_userid,
             "total_cost": str(order_totalcost)
         }
@@ -76,7 +76,7 @@ def add_item(order_id, item_id):
         if not item_in:
             response = requests.get(stock_host + 'stock/find/'+ str(item_id))
             price = response['price']
-        item_num = connector.add_item(order_id, item_id, price)
+        item_num = connector.add_item(order_id=order_id, item_id=item_id, item_price=price)
         return jsonify({'item_amount':str(item_num)})
     except ValueError:
         abort(404)
@@ -86,8 +86,7 @@ def remove_item(order_id, item_id):
     try:
         item_in, price = connector.find_item(order_id, item_id)
         if not item_in:
-            response = requests.get(stock_host + 'stock/find/'+ str(item_id))
-            price = response['price']
+            raise ValueError('Item not in order')
         item_num = connector.remove_item(order_id, item_id, price)
         return jsonify({'item_list':str(item_num)})
     except ValueError:
@@ -104,20 +103,20 @@ def checkout(order_id):
     try:
         order_paid, order_items, order_userid,\
         totalcost = connector.get_order_info(escape(order_id))
-        user_id = connector.get_user_id(order_id)
-        response = requests.get(payment_host + 'payment/pay/'+ str(user_id) +'/' \
-            + str(order_id))
+        response = requests.post(payment_host + 'payment/pay/'+ str(user_id) +'/' \
+            + str(order_id)+'/'+str(totalcost))
         if response.ok is False:
             abort(404)
         
         for item in order_items:
-            item_num = connector.get_item_num(order_id=order_id, item_id=item_id)
-            response = requests.get(stock_host + 'stock/subtract/'+ str(item) +'/' \
+            item = connector.get_order_item(order_id, item)
+            item_num = connector.get_item_num(order_id=order_id, item_id=item.item_id)
+            response = requests.post(stock_host + 'stock/subtract/'+ str(item) +'/' \
                 + str(item_num))
             if response.ok is False:
                 abort(404)
         connector.set_paid(order_id=order_id)
         return jsonify({'status':'success'})
-    except:
+    except ValueError:
         return jsonify({'status':'fail'})
     
