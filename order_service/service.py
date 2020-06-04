@@ -81,7 +81,7 @@ def remove_item(order_id, item_id):
         item_in, price = connector.find_item(order_id, item_id)
         if not item_in:
             raise ValueError('Item not in order')
-        item_num = connector.remove_item(order_id, item_id, price)
+        item_num = connector.remove_item(order_id, item_id)
         return jsonify({'item_list':str(item_num)})
     except ValueError:
         abort(404)
