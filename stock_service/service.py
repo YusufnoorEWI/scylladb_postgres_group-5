@@ -3,11 +3,11 @@ from decimal import Decimal
 import sys
 import os
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
 from flask import Flask, abort, jsonify
 from markupsafe import escape
 from stock_service.connector import ConnectorFactory
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 app = Flask(__name__)
 
@@ -65,7 +65,7 @@ def add_amount(item_id, number):
         abort(404)
 
 
-@app.route('/stock/create/<price>', methods=['POST'])
+@app.route('/stock/item/create/<price>', methods=['POST'])
 def create_item(price):
     """Creates an item with the specified price.
 
