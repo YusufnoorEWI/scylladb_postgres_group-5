@@ -18,12 +18,12 @@ import os
 class ConnectorFactory:
     def __init__(self):
         """Initializes a database connector factory with parameters set by the environment variables."""
-        self.db_host = os.getenv("DB_HOST", '127.0.0.1')
+        self.db_host = os.getenv("DB_HOST", 'localhost')
         self.db_type = os.getenv("DATABASE_TYPE", 'postgres')
         self.postgres_user = os.getenv('POSTGRES_USER', 'postgres')
         self.postgres_password = os.getenv('POSTGRES_PASSWORD', 'mysecretpassword')
         self.postgres_port = os.getenv('POSTGRES_PORT', '5432')
-        self.postgres_name = os.getenv('POSTGRES_DB', 'test_db')
+        self.postgres_name = os.getenv('POSTGRES_DB', 'postgres')
 
     def get_connector(self):
         """
@@ -167,8 +167,8 @@ class PostgresConnector:
 
         :raises ValueError: if there is no such user
         """
-        user = self.get_user(user_id)
-        self.db_session.remove(user)
+        user = self.get_user(user_id=user_id)
+        self.db_session.delete(user)
         self.db_session.commit()
 
     def add_amount(self, user_id, number):
