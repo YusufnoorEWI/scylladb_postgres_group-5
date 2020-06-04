@@ -65,7 +65,7 @@ def add_amount(item_id, number):
         abort(404)
 
 
-@app.route('/stock/create/<price>', methods=['POST'])
+@app.route('/stock/item/create/<price>', methods=['POST'])
 def create_item(price):
     """Creates an item with the specified price.
 
