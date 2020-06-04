@@ -18,12 +18,12 @@ import os
 class ConnectorFactory:
     def __init__(self):
         """Initializes a database connector factory with parameters set by the environment variables."""
-        self.db_host = os.getenv("DB_HOST")
-        self.db_type = os.getenv("DATABASE_TYPE")
-        self.postgres_user = os.getenv('POSTGRES_USER')
-        self.postgres_password = os.getenv('POSTGRES_PASSWORD')
-        self.postgres_port = os.getenv('POSTGRES_PORT')
-        self.postgres_name = os.getenv('POSTGRES_DB')
+        self.db_host = os.getenv("DB_HOST", '127.0.0.1')
+        self.db_type = os.getenv("DATABASE_TYPE", 'postgres')
+        self.postgres_user = os.getenv('POSTGRES_USER', 'postgres')
+        self.postgres_password = os.getenv('POSTGRES_PASSWORD', 'mysecretpassword')
+        self.postgres_port = os.getenv('POSTGRES_PORT', '5432')
+        self.postgres_name = os.getenv('POSTGRES_DB', 'test_db')
 
     def get_connector(self):
         """
