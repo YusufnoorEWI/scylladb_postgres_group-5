@@ -114,7 +114,7 @@ class ScyllaConnector:
                 price=item_price, item_num=1)
         return item.item_num
 
-    def remove_item(self, order_id, item_id, item_price):
+    def remove_item(self, order_id, item_id):
         """Removes the given item from the given order
 
         :param item_id: the id of the item
@@ -122,8 +122,6 @@ class ScyllaConnector:
         :raises AssertionError: if the item is not in the order
         :return: the number of the item in stock
         """
-        if item_price < 0:
-            raise ValueError(f"Item price {item_price} is not valid")
         try:
             item = ScyllaOrderItem.get(item_id=item_id, order_id=order_id)
             item.item_num -= 1
