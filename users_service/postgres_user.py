@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 Base = declarative_base()
 
 
-class PostgresStockItem(Base):
+class PostgresUser(Base):
     __tablename__ = 'stock_item'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
