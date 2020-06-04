@@ -11,11 +11,7 @@ class PostgresOrder(Base_order):
     __tablename__ = 'order'
 
     order_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-<<<<<<< HEAD
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-=======
-    user_id = Column(UUID(as_uuid=True), primary_key=False, default=uuid.uuid4, unique=True, nullable=False)
->>>>>>> c805099a48c4bd5abc786f5cbaae835ea7e6d796
     paid = Column(Boolean, nullable=False)
 
     def __init__(self, user_id):
