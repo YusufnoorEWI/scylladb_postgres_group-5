@@ -136,7 +136,7 @@ class ScyllaConnector:
     def get_order_info(self, order_id):
         order = ScyllaOrder.get(order_id=order_id)
         try:
-            items = OrderItem.get(order_id=order_id)
+            items = ScyllaOrderItem.get(order_id=order_id)
             items = items[:]
             total_cost = 0
             item_list = []
@@ -171,7 +171,7 @@ class ScyllaConnector:
 
 class PostgresConnector:
     def __init__(self, db_user, db_password, db_host, db_port, db_name):
-        """Establishes a connection to the PostgreSQL database, and creates or updates the stock_item table.
+        """Establishes a connection to the PostgreSQL database, and creates or updates the order_item and order table.
         """
         self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
                                     convert_unicode=True)
@@ -260,12 +260,12 @@ class PostgresConnector:
             item.item_num += 1
             self.db_session.commit()
         except:
-            item_id = self.create_order_item(order_id, item_id, item_price, 1)
+            self.create_order_item(order_id, item_id, item_price, 1)
             item = self.get_order_item(order_id, item_id)
             self.db_session.commit()
         return item.item_num
     
-    def remove_item(self, order_id, item_id, item_price):
+    def remove_item(self, order_id, item_id):
         """Removes the given item from the given order
 
         :param item_id: the id of the item
@@ -273,8 +273,6 @@ class PostgresConnector:
         :raises AssertionError: if the item is not in the order
         :return: the list of the item in stock
         """
-        if item_price < 0:
-            raise ValueError(f"Item price {item_price} is not valid")
         try:
             item = self.get_order_item(order_id, item_id)
             item.item_num -= 1
@@ -282,7 +280,7 @@ class PostgresConnector:
         except QueryException:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
         tmp = item.item_num
-        if item_price == 0:
+        if item.item_num == 0:
             self.db_session.delete(item)
             self.db_session.commit()
         return tmp
