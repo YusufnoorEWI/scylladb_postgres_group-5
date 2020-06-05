@@ -11,6 +11,7 @@ services:
      - stock_service
      - payment_service
      - users_service
+     - order_service
     ports:
      - "8080:8080"
 
@@ -55,6 +56,20 @@ services:
       - scylla_payment
     build:
       context: "./payment_service"
+
+  scylla_order:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: "--smp 1 --overprovisioned 1"
+  order_service:
+    image: 'order_service:latest'
+    networks:
+      - our_network
+    depends_on:
+      - scylla_order
+    build:
+      context: "./order_service"
 
 networks:
   our_network:
