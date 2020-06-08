@@ -1,5 +1,6 @@
 import sys
 import os
+from time import sleep
 
 from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
@@ -47,7 +48,12 @@ class ScyllaConnector:
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
-        session = Cluster([host]).connect()  #
+        while True:
+            try:
+                session = Cluster([host]).connect()
+                break
+            except Exception:
+                sleep(1)
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
             WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }

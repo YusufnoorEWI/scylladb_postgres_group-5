@@ -5,6 +5,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
 from flask import Flask, abort, jsonify
 from markupsafe import escape
 from order_service.connector import ConnectorFactory
@@ -13,27 +14,27 @@ app = Flask(__name__)
 
 connector = ConnectorFactory().get_connector()
 
-user_host = os.getenv('USERS_SERVICE', 'http://127.0.0.1:5000/')
-stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:5000/')
-payment_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:5000/')
+
+user_host = os.getenv('USERS_SERVICE', '127.0.0.1:8080')
+stock_host = os.getenv('STOCK_SERVICE', '127.0.0.1:8080')
+payment_host = os.getenv('PAYMENT_SERVICE', '127.0.0.1:8080')
 
 
 @app.route('/orders/create/<user_id>', methods=['POST'])
 def create_order(user_id):
     """
     creates an order for the given user, and returns an order_id
-
     :param user_id: id of user to create order for
     :return: the order’s id
     """
-    response = requests.get(user_host + 'users/find/' + str(user_id))
-    if not response.ok:
+    res = requests.get(f"http://{user_host}/users/find/{user_id}")
+    if not res.ok:
         abort(404)
     order_id = connector.create_order(user_id)
-    response = {
+    res = {
         "order_id": order_id
     }
-    return jsonify(response)
+    return jsonify(res)
 
 
 @app.route('/orders/remove/<order_id>', methods=['DELETE'])
@@ -72,7 +73,7 @@ def add_item(order_id, item_id):
     try:
         item_in, price = connector.find_item(order_id, item_id)
         if not item_in:
-            response = requests.get(stock_host + 'stock/find/' + str(item_id))
+            response = requests.get(f"http://{stock_host}/stock/find/{item_id}")
             price = Decimal(response.json()['price'])
         item_num = connector.add_item(order_id=order_id, item_id=item_id, item_price=price)
         return jsonify({'item_amount': str(item_num)})
@@ -113,17 +114,17 @@ def checkout(order_id):
 
 
 def pay_order(user_id, order_id, amount):
-    response = requests.post(f'{payment_host}payment/pay/{user_id}/{order_id}/{amount}')
+    response = requests.post(f'http://{payment_host}/payment/pay/{user_id}/{order_id}/{amount}')
     if not response.ok:
         raise ValueError("Not enough credit")
 
 
 def rollback_payment(user_id, order_id):
-    return requests.post(f'{payment_host}payment/cancel/{user_id}/{order_id}')
+    return requests.post(f'http://{payment_host}/payment/cancel/{user_id}/{order_id}')
 
 
 def reserve_item(item_id, number):
-    return requests.post(f'{stock_host}stock/subtract/{item_id}/{number}')
+    return requests.post(f'http://{stock_host}/stock/subtract/{item_id}/{number}')
 
 
 def reserve_items(order_id, user_id, items):
@@ -141,7 +142,7 @@ def reserve_items(order_id, user_id, items):
 
 
 def rollback_item(item_id, number):
-    return requests.post(f'{stock_host}stock/add/{item_id}/{number}')
+    return requests.post(f'http://{stock_host}/stock/add/{item_id}/{number}')
 
 
 def rollback_items(order_id, item_ids):

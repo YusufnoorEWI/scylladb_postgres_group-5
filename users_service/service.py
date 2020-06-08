@@ -5,11 +5,10 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from users_service.connector import ScyllaConnector
+from users_service.connector import ConnectorFactory
 
 app = Flask(__name__)
-db_host = os.getenv("DB_HOST", "127.0.0.1")
-connector = ScyllaConnector(db_host)
+connector = ConnectorFactory().get_connector()
 
 
 @app.route('/users/create', methods=['POST'])
