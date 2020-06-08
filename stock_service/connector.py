@@ -32,7 +32,8 @@ class ConnectorFactory:
         or a ScyllaConnector if DATABASE_TYPE is set to scylla
         """
         if self.db_type == 'postgres':
-            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port, self.postgres_name)
+            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port,
+                                     self.postgres_name)
         elif self.db_type == 'scylla':
             return ScyllaConnector(self.db_host)
         else:
