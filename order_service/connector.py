@@ -1,4 +1,3 @@
-import sys
 import os
 from time import sleep
 
@@ -145,7 +144,13 @@ class ScyllaConnector:
 
     @staticmethod
     def get_order_info(order_id):
-        order = ScyllaOrder.get(order_id=order_id)
+        try:
+            order = ScyllaOrder.get(order_id=order_id)
+        except QueryException:
+            raise ValueError("Order with id not found")
+        except ValidationError:
+            raise ValueError("Invalid id provided")
+
         try:
             items = ScyllaOrderItem.objects.filter(order_id=order_id).all()
             items = items[:]
@@ -153,12 +158,23 @@ class ScyllaConnector:
             item_list = []
             for item in items:
                 total_cost += item.item_num * item.price
-                item_list.append(item.item_id)
+                item_list.extend([item.item_id] * item.item_num)
         except QueryException:
             # When there's no item in the order
             item_list = []
             total_cost = 0
         return order.paid, item_list, order.user_id, total_cost
+
+    @staticmethod
+    def get_order_ids_by_user(user_id):
+        try:
+            orders = ScyllaOrder.objects.allow_filtering().filter(user_id=user_id).all()
+            order_ids = []
+            for order in list(orders):
+                order_ids.append(order.order_id)
+        except QueryException:
+            raise ValueError("No orders for user")
+        return order_ids
 
     @staticmethod
     def find_item(order_id, item_id):
@@ -167,6 +183,8 @@ class ScyllaConnector:
             return True, item.price
         except QueryException:
             return False, None
+        except ValidationError:
+            raise ValueError("Not a valid UUID")
 
     @staticmethod
     def get_item_num(order_id, item_id):
@@ -253,6 +271,8 @@ class PostgresConnector:
             raise ValueError(f"Item {item_id} in order {order_id} is not a valid id")
         except QueryException:
             raise ValueError(f"Item {item_id} in order {order_id} not found")
+        except ValidationError:
+            raise ValueError("Unknown exception (validation error)")
         return item
 
     def delete_order(self, order_id):

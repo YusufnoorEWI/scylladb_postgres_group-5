@@ -14,7 +14,6 @@ app = Flask(__name__)
 
 connector = ConnectorFactory().get_connector()
 
-
 user_host = os.getenv('USERS_SERVICE', '127.0.0.1:8080')
 stock_host = os.getenv('STOCK_SERVICE', '127.0.0.1:8080')
 payment_host = os.getenv('PAYMENT_SERVICE', '127.0.0.1:8080')
@@ -55,15 +54,24 @@ def delete_order(order_id):
 def retrieve_order(order_id):
     try:
         order_paid, order_items, order_userid, \
-            order_totalcost = connector.get_order_info(escape(order_id))
+            total_cost = connector.get_order_info(escape(order_id))
         response = {
             "order_id": order_id,
             "paid": str(order_paid),
             "items": order_items,
             "user_id": order_userid,
-            "total_cost": str(order_totalcost)
+            "total_cost": str(total_cost)
         }
         return jsonify(response)
+    except ValueError:
+        abort(404)
+
+
+@app.route('/orders/findByUser/<user_id>', methods=['GET'])
+def retrieve_order_by_user(user_id):
+    try:
+        order_ids = connector.get_order_ids_by_user(user_id)
+        return jsonify({'order_ids': order_ids})
     except ValueError:
         abort(404)
 
@@ -71,6 +79,11 @@ def retrieve_order(order_id):
 @app.route('/orders/addItem/<order_id>/<item_id>', methods=['POST'])
 def add_item(order_id, item_id):
     try:
+        order_paid, _, _, _ = connector.get_order_info(escape(order_id))
+
+        if order_paid:
+            raise ValueError('Order already completed')
+
         item_in, price = connector.find_item(order_id, item_id)
         if not item_in:
             response = requests.get(f"http://{stock_host}/stock/find/{item_id}")
@@ -84,8 +97,11 @@ def add_item(order_id, item_id):
 @app.route('/orders/removeItem/<order_id>/<item_id>', methods=['DELETE'])
 def remove_item(order_id, item_id):
     try:
-        item_in, price = connector.find_item(order_id, item_id)
-        if not item_in:
+        order_paid, order_items, user_id, total_cost = connector.get_order_info(escape(order_id))
+        if order_paid:
+            raise ValueError('Order already completed')
+
+        if item_id not in order_items:
             raise ValueError('Item not in order')
         item_num = connector.remove_item(order_id, item_id)
         return jsonify({'item_list': str(item_num)})
@@ -102,9 +118,12 @@ def checkout(order_id):
 
     """
     try:
-        order_paid, order_items, user_id, totalcost = connector.get_order_info(escape(order_id))
+        order_paid, order_items, user_id, total_cost = connector.get_order_info(escape(order_id))
 
-        pay_order(user_id, order_id, totalcost)
+        if order_paid:
+            raise ValueError("Order already completed")
+
+        pay_order(user_id, order_id, total_cost)
         reserve_items(order_id, user_id, order_items)
         connector.set_paid(order_id=order_id)
 
