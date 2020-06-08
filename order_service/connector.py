@@ -12,8 +12,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from order_service.scylla_order_item import ScyllaOrderItem
 from order_service.scylla_order import ScyllaOrder
-from order_service.postgress_order_item import Base_order_item, PostgresOrderItem
-from order_service.postgress_order import PostgresOrder, Base_order
+from order_service.postgres_order_item import Base_order_item, PostgresOrderItem
+from order_service.postgres_order import PostgresOrder, Base_order
 
 
 class ConnectorFactory:
