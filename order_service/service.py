@@ -100,7 +100,7 @@ def remove_item(order_id, item_id):
         order_paid, order_items, user_id, total_cost = connector.get_order_info(escape(order_id))
         if order_paid:
             raise ValueError('Order already completed')
-
+    
         if item_id not in order_items:
             raise ValueError('Item not in order')
         item_num = connector.remove_item(order_id, item_id)

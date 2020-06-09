@@ -269,7 +269,7 @@ class PostgresConnector:
                 .filter_by(order_id=order_id, item_id=item_id).one()
         except DataError:
             raise ValueError(f"Item {item_id} in order {order_id} is not a valid id")
-        except QueryException:
+        except NoResultFound:
             raise ValueError(f"Item {item_id} in order {order_id} not found")
         except ValidationError:
             raise ValueError("Unknown exception (validation error)")
@@ -284,7 +284,7 @@ class PostgresConnector:
             order = self.get_order(order_id=order_id)
             self.db_session.delete(order)
             self.db_session.commit()
-        except ValueError:
+        except ValueError | QueryException:
             raise ValueError(f"Order with id {order_id} not found")
 
     def add_item(self, item_id, order_id, item_price):
@@ -345,9 +345,19 @@ class PostgresConnector:
         item_list = []
         for item in items:
             total_cost += item.item_num * item.price
-            item_list.extend([item.item_id] * item.item_num)
+            item_list.extend([str(item.item_id)] * item.item_num)
         return order.paid, item_list, order.user_id, total_cost
 
+    def get_order_ids_by_user(self, user_id):
+        try:
+            orders = self.db_session.query(PostgresOrder).filter_by(user_id=user_id).all()
+            order_ids = []
+            for order in list(orders):
+                order_ids.append(order.order_id)
+        except QueryException:
+            raise ValueError("No orders for user")
+        return order_ids
+            
     def find_item(self, order_id, item_id):
         """
         Check whether an item is present in the order
@@ -357,12 +367,15 @@ class PostgresConnector:
         :return: Boolean indicating whether item was found, price if found
         """
         try:
-            item = self.get_order_item(order_id, item_id)
+            item = self.db_session.query(PostgresOrderItem) \
+                .filter_by(order_id=order_id, item_id=item_id).one()
             if item is None:
                 return False, None
             return True, item.price
-        except ValueError:
+        except NoResultFound:
             return False, None
+        except DataError:
+            raise ValueError("Not legal item id")
 
     def get_item_num(self, order_id, item_id):
         """
@@ -373,9 +386,10 @@ class PostgresConnector:
         :return: amount of occurrences of item with item_id in order with order_id
         """
         try:
-            item = self.get_order_item(order_id, item_id)
+            item = self.db_session.query(PostgresOrderItem) \
+                .filter_by(order_id=order_id, item_id=item_id).one()
             return item.item_num
-        except QueryException:
+        except NoResultFound:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
 
     def set_paid(self, order_id):

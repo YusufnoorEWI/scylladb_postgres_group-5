@@ -4,7 +4,7 @@ ENV DB_HOST "scylla_order"
 ENV USERS_SERVICE "users_service"
 ENV STOCK_SERVICE "stock_service"
 ENV PAYMENT_SERVICE "payment_service"
-ENV DATABASE_TYPE "scylla"
+ENV DATABASE_TYPE "postgres"
 
 COPY . /order_service
 
