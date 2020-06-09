@@ -158,7 +158,7 @@ class ScyllaConnector:
             item_list = []
             for item in items:
                 total_cost += item.item_num * item.price
-                item_list.extend([item.item_id] * item.item_num)
+                item_list.extend([str(item.item_id)] * item.item_num)
         except QueryException:
             # When there's no item in the order
             item_list = []

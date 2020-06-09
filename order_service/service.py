@@ -100,13 +100,13 @@ def remove_item(order_id, item_id):
         order_paid, order_items, user_id, total_cost = connector.get_order_info(escape(order_id))
         if order_paid:
             raise ValueError('Order already completed')
-    
-        if item_id not in order_items:
+
+        if str(item_id) not in order_items:
             raise ValueError('Item not in order')
         item_num = connector.remove_item(order_id, item_id)
-        return jsonify({'item_list': str(item_num)})
-    except ValueError:
-        abort(404)
+        return jsonify({'item_amount': str(item_num)})
+    except ValueError as error:
+        abort(404, error.args[0])
 
 
 @app.route('/orders/checkout/<order_id>', methods=['POST'])
