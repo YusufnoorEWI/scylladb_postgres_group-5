@@ -1,13 +1,48 @@
 import os
 from time import sleep
-from flask import abort
+from flask import abort, Response
 import requests
 from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
 
-from payment_service.payments import Payments
+from sqlalchemy import create_engine
+from sqlalchemy.exc import DataError
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
+
+from payment_service.scylla_payment_item import Payments
+from payment_service.postgres_payment_item import Base, Payment
+
+
+
+
+class ConnectorFactory:
+    def __init__(self):
+        """Initializes a database connector factory with parameters set by the environment variables."""
+        self.db_host = os.getenv("DB_HOST", 'localhost')
+        self.db_type = os.getenv("DATABASE_TYPE", 'postgres')
+        self.postgres_user = os.getenv('POSTGRES_USER', 'postgres')
+        self.postgres_password = os.getenv('POSTGRES_PASSWORD', 'mysecretpassword')
+        self.postgres_port = os.getenv('POSTGRES_PORT', '5432')
+        self.postgres_name = os.getenv('POSTGRES_DB', 'postgres')
+
+    def get_connector(self):
+        """
+        Returns the connector specified by the DATABASE_TYPE environment variable.
+        :raises ValueError: if DATABASE_TYPE is not a valid database option
+        :return: a PostgresConnector if DATABASE_TYPE is set to postgres,
+        or a ScyllaConnector if DATABASE_TYPE is set to scylla
+        """
+        if self.db_type == 'postgres':
+            return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port, self.postgres_name)
+        elif self.db_type == 'scylla':
+            return ScyllaConnector(self.db_host)
+        else:
+            raise ValueError("Invalid database")
 
 
 class ScyllaConnector:
@@ -89,3 +124,82 @@ class ScyllaConnector:
             abort(400, 'payment does not exist')
         except ValidationError:
             abort(400, f"Payment order_id {order_id} is not a valid id")
+
+
+
+#I am not sure here about the endpoints
+
+class PostgresConnector:
+    def __init__(self, db_user, db_password, db_host, db_port, db_name):
+        """Establishes a connection to the PostgreSQL database, and creates or updates the stock_item table.
+        """
+        self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
+                                    convert_unicode=True)
+        self.db_session = scoped_session(sessionmaker(autocommit=False,
+                                                      autoflush=False,
+                                                      bind=self.engine))
+        Base.query = self.db_session.query_property()
+        Base.metadata.create_all(bind=self.engine)
+
+
+    def pay(self, user_id, order_id, amount):
+        """Pays the order
+        """
+        try:
+            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
+            if payment is not None:  # payment exists in the database
+                if payment.status is True:
+                    abort(400, "the payment is already made")
+
+            users_response = requests.post(f"http://{os.environ['USER_SERVICE_URL']}/users/credit/subtract/{user_id}/{amount}")
+            if users_response.status_code == 400 or users_response.status_code == 404:
+                abort(400, "User service failure")
+
+            if payment is not None:
+                payment.status = True
+                payment.amount = amount
+            else:
+                payment = Payment(user_id=user_id, order_id=order_id, status=True, amount=amount)
+            self.db_session.add(payment)
+            self.db_session.commit()
+        except SQLAlchemyError:
+            return Response('Error in the database', status=400)
+
+
+    @staticmethod
+    def cancel_pay(self ,user_id, order_id):
+        """Cancels the payment.
+
+        :raises ValueError: if there is no such user
+        """
+        try:
+            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
+            if payment is None:
+                abort(400, 'payment does not exist')
+            if payment.status is False:
+                abort(400, "the payment is not made")
+            users_response = requests.post(f"http://{os.environ['USER_SERVICE_URL']}/users/credit/add/{user_id}/{payment.amount}")
+            if users_response.status_code == 400 or users_response.status_code == 404:
+                abort(400, "User service failure")
+            payment.status = False
+            self.db_session.add(payment)
+            self.db_session.commit()
+        except SQLAlchemyError:
+            return Response('Error in the database', status=400)
+
+
+    @staticmethod
+    def status(order_id):
+        """Retrieves the payment from the database by its order_id.
+
+        :param order_id: the id of the order
+        :raises ValueError: if the order with order_id does not exist or if the format of the order_id is invalid
+        :return: the payment with order_id order_id
+        """
+        try:
+            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id).first()
+            if payment is None:
+                abort(400, 'payment does not exist')
+        except SQLAlchemyError:
+            return Response('Error in the database', status=400)
+
