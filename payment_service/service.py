@@ -4,13 +4,21 @@ from flask import Flask, Response, jsonify
 
 from payment_service.connector import ConnectorFactory
 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+#from payment_service.connector import ConnectorFactory
+
+from payment_service.connector import ScyllaConnector
 
 app = Flask(__name__)
+db_host = os.getenv("DB_HOST", "127.0.0.1")
+connector = ScyllaConnector(db_host)
+#connector = ConnectorFactory().get_connector()
 
 
 
-connector = ConnectorFactory().get_connector()
+
+
 
 @app.route('/payment/pay/<user_id>/<order_id>/<amount>', methods=['POST'])
 def pay(user_id, order_id, amount):

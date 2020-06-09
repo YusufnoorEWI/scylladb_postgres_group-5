@@ -6,14 +6,11 @@ from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.query import QueryException
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
-
 from sqlalchemy import create_engine
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-
 from payment_service.scylla_payment_item import Payments
 from payment_service.postgres_payment_item import Base, Payment
 
@@ -66,6 +63,12 @@ class ScyllaConnector:
 
     def pay(self, user_id, order_id, amount):
         """Pays the order
+        :param user_id the id of the user
+        :param order_id the id of the order
+        :param the amount of the transaction
+        :raise ValidationErrror if the order id is not valid
+        :return creates the payment for the parameters used
+
         """
         try:
             payment = Payments.get(order_id=order_id)
@@ -92,7 +95,10 @@ class ScyllaConnector:
     def cancel_pay(user_id, order_id):
         """Cancels the payment.
 
+        :param user_id: the id of the user
+        :param order_id: the id of the order
         :raises ValueError: if there is no such user
+        :return Payment status is False (cancel)
         """
         try:
             payment = Payments.get(order_id=order_id)
@@ -144,6 +150,11 @@ class PostgresConnector:
 
     def pay(self, user_id, order_id, amount):
         """Pays the order
+        :param user_id the id of the user
+        :param order_id the id of the order
+        :param the amount of the transaction
+        :raise ValidationErrror if the order id is not valid
+        :return creates the payment for the parameters used
         """
         try:
             payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
@@ -152,7 +163,7 @@ class PostgresConnector:
                     abort(400, "the payment is already made")
 
             users_response = requests.post(f"http://{os.environ['USER_SERVICE_URL']}/users/credit/subtract/{user_id}/{amount}")
-            if users_response.status_code == 400 or users_response.status_code == 404:
+            if not users_response.ok:
                 abort(400, "User service failure")
 
             if payment is not None:
@@ -163,14 +174,17 @@ class PostgresConnector:
             self.db_session.add(payment)
             self.db_session.commit()
         except SQLAlchemyError:
-            return Response('Error in the database', status=400)
+            return abort(400, 'Error in the database')
 
 
-    @staticmethod
+
     def cancel_pay(self ,user_id, order_id):
-        """Cancels the payment.
+        """Cancels the payment from the database.
 
-        :raises ValueError: if there is no such user
+        :param user_id: the id of the user
+        :param order_id: the id of the order
+        :raises : error  if the payment does not exist/made and  if the userid and order id does not exist
+        :return: sets the payment status as false (cancel)
         """
         try:
             payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
@@ -179,17 +193,17 @@ class PostgresConnector:
             if payment.status is False:
                 abort(400, "the payment is not made")
             users_response = requests.post(f"http://{os.environ['USER_SERVICE_URL']}/users/credit/add/{user_id}/{payment.amount}")
-            if users_response.status_code == 400 or users_response.status_code == 404:
+            if not users_response.ok:
                 abort(400, "User service failure")
             payment.status = False
             self.db_session.add(payment)
             self.db_session.commit()
         except SQLAlchemyError:
-            return Response('Error in the database', status=400)
+            return abort(400, 'Error in the database')
 
 
-    @staticmethod
-    def status(order_id):
+
+    def status(self, order_id):
         """Retrieves the payment from the database by its order_id.
 
         :param order_id: the id of the order
@@ -200,6 +214,11 @@ class PostgresConnector:
             payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id).first()
             if payment is None:
                 abort(400, 'payment does not exist')
+            else:
+                return payment.status
+
         except SQLAlchemyError:
-            return Response('Error in the database', status=400)
+            return abort(400, 'Error in the database')
+
+
 

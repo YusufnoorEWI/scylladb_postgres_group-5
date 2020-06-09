@@ -7,13 +7,13 @@ Base = declarative_base()
 
 class Payment(Base):
     # Define Payment table
-    __table_name__ = 'payments'
+    __tablename__ = 'payments'
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    user_id =Column(UUID(as_uuid=True), nullable=False)
-    order_id = Column(UUID(as_uuid=True), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default= uuid.uuid4)
+    user_id =Column(UUID(as_uuid=True), nullable=False, default= uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), nullable=False, default= uuid.uuid4)
     status = Column(Boolean())
-    amount = Column(Float())
+    amount = Column(Numeric())
 
     # Define all the views
     def get_data(self):
