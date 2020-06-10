@@ -3,7 +3,6 @@ import os
 import requests
 import unittest
 
-from random import randint, uniform
 from uuid import UUID
 
 order_host = os.getenv('ORDER_SERVICE', 'http://127.0.0.1:8080/')
@@ -81,7 +80,9 @@ class TestOrderService(unittest.TestCase):
         self.user2 = users_create().json()
         users_credit_add(self.user1['user_id'], 100)
         self.item1 = stock_create(20).json()
+        stock_add(self.item1["item_id"], 3)
         self.item2 = stock_create(10).json()
+        stock_add(self.item2["item_id"], 3)
         self.order1 = orders_create(self.user1['user_id']).json()
         self.order2 = orders_create(self.user2['user_id']).json()
         self.order3 = orders_create(self.user2['user_id']).json()
@@ -226,32 +227,121 @@ class TestOrderService(unittest.TestCase):
         self.assertNotEqual(items_before, items_after)
         self.assertEqual(test, items_after)
 
+    def test_order_remove_item_existing_twice(self):
+        items_before = orders_find(self.order1['order_id']).json()['items']
+        res = orders_remove_item(self.order1['order_id'], self.item1['item_id'])
+        res2 = orders_remove_item(self.order1['order_id'], self.item1['item_id'])
+        items_after = orders_find(self.order1['order_id']).json()['items']
 
+        test = items_before.copy()
+        test.remove(self.item1['item_id'])
+        test.remove(self.item1['item_id'])
 
-    # def test_order_add_item_existing_twice(self):
-    #     res = orders_add_item(self.order3['order_id'], self.item1['item_id'])
-    #     res2 = orders_add_item(self.order3['order_id'], self.item1['item_id'])
-    #
-    #     amount = res2.json()["item_amount"]
-    #
-    #     self.assertTrue(res.ok)
-    #     self.assertTrue(res2.ok)
-    #     self.assertEqual(amount, str(2))
-    #
-    # def test_order_add_item_non_existing_order(self):
-    #     res = orders_add_item(self.user1['user_id'], self.item1['item_id'])
-    #     self.assertFalse(res.ok)
-    #
-    # def test_order_add_item_non_existing_item(self):
-    #     items_before = orders_find(self.order1['order_id']).json()['items']
-    #
-    #     res = orders_add_item(self.order1['order_id'], self.user1['user_id'])
-    #
-    #     items_after = orders_find(self.order1['order_id']).json()['items']
-    #
-    #     self.assertFalse(res.ok)
-    #     self.assertEqual(items_before, items_after)
+        self.assertTrue(res.ok)
+        self.assertTrue(res2.ok)
+        self.assertNotEqual(items_before, items_after)
+        self.assertEqual(test, items_after)
 
+    def test_order_remove_item_non_existing_order(self):
+        res = orders_remove_item(self.user1['user_id'], self.item1['item_id'])
+        self.assertFalse(res.ok)
+
+    def test_order_remove_item_non_existing_item(self):
+        items_before = orders_find(self.order1['order_id']).json()['items']
+
+        res = orders_remove_item(self.order1['order_id'], self.user1['user_id'])
+
+        items_after = orders_find(self.order1['order_id']).json()['items']
+
+        self.assertFalse(res.ok)
+        self.assertEqual(items_before, items_after)
+
+    def test_order_checkout_enough_balance_payment(self):
+        total_cost = float(orders_find(self.order1['order_id']).json()['total_cost'])
+        old_balance = float(users_find(self.user1['user_id']).json()['credit'])
+        res = orders_checkout(self.order1['order_id'])
+
+        new_balance = float(users_find(self.user1['user_id']).json()['credit'])
+
+        self.assertTrue(res.ok)
+        self.assertGreaterEqual(old_balance, total_cost)
+        self.assertEqual(new_balance, old_balance - total_cost)
+
+    def test_order_checkout_enough_balance_stock(self):
+        items = orders_find(self.order1['order_id']).json()['items']
+
+        stock_dict = {}
+        for item in items:
+            stock_dict[item] = stock_find(item).json()['stock']
+
+        order_dict = {}
+        for item in items:
+            if item in order_dict:
+                order_dict[item] += 1
+            else:
+                order_dict[item] = 1
+
+        res = orders_checkout(self.order1['order_id'])
+
+        self.assertTrue(res.ok)
+
+        for item in items:
+            self.assertEqual(stock_dict[item] - order_dict[item], stock_find(item).json()['stock'])
+
+    def test_order_checkout_insufficient_balance(self):
+        total_cost = float(orders_find(self.order2['order_id']).json()['total_cost'])
+        old_balance = float(users_find(self.user2['user_id']).json()['credit'])
+
+        res = orders_checkout(self.order2['order_id'])
+
+        new_balance = float(users_find(self.user2['user_id']).json()['credit'])
+
+        self.assertFalse(res.ok)
+        self.assertLessEqual(old_balance, total_cost)
+        self.assertEqual(old_balance, new_balance)
+
+    def test_order_checkout_insufficient_stock(self):
+        items = orders_find(self.order2['order_id']).json()['items']
+
+        stock_dict = {}
+        for item in items:
+            stock_dict[item] = stock_find(item).json()['stock']
+
+        order_dict = {}
+        for item in items:
+            if item in order_dict:
+                order_dict[item] += 1
+            else:
+                order_dict[item] = 1
+
+        res = orders_checkout(self.order2['order_id'])
+
+        self.assertFalse(res.ok)
+
+        for item in items:
+            self.assertEqual(stock_dict[item], stock_find(item).json()['stock'])
+
+    def test_order_checkout_non_existing(self):
+        res = orders_checkout(self.user1['user_id'])
+
+        self.assertFalse(res.ok)
+
+    def test_order_success_paid(self):
+        res = orders_find(self.order1['order_id'])
+
+        self.assertTrue(res.ok)
+        paid_before = res.json()['paid']
+
+        self.assertEqual(paid_before, 'False')
+
+        res2 = orders_checkout(self.order1['order_id'])
+        res3 = orders_find(self.order1['order_id'])
+
+        self.assertTrue(res2.ok)
+        self.assertTrue(res3.ok)
+        paid_after = res3.json()['paid']
+
+        self.assertEqual(paid_after, 'True')
 
 
 
