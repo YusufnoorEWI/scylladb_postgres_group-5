@@ -16,16 +16,12 @@ class Payment(Base):
     amount = Column(Numeric())
 
     # Define all the views
-    def get_data(self):
-        return {
-            'user_id': str(self.user_id),
-            'payment_id': str(self.payment_id),
-            'status': self.status,
-            'order_id': str(self.order_id),
-            'amount': str(self.amount)
-        }
 
-    def get_status(self):
-        return {
-            'status': self.status
-        }
+    def __init__(self, id, user_id, order_id, status, amount):
+        self.id = id,
+        self.user_id = user_id,
+        self.order_id = order_id,
+        self.status = status,
+        self.amount = amount
+
+
