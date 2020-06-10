@@ -1,163 +1,80 @@
-import os
-
-import requests
 import unittest
 
-from random import randint, uniform
-from uuid import UUID
-
-stock_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:8080/')
-
-def users_create():
-    return requests.post(f'{user_host}users/create')
-
-
-def users_remove(user_id):
-    return requests.delete(f'{user_host}users/remove/{user_id}')
-
-
-def users_find(user_id):
-    return requests.get(f'{user_host}users/find/{user_id}')
-
-
-def users_credit_add(user_id, amount):
-    return requests.post(f'{user_host}users/credit/add/{user_id}/{amount}')
-
-def orders_create(user_id):
-    return requests.post(f'{order_host}orders/create/{user_id}')
-
-
-def orders_remove(order_id):
-    return requests.delete(f'{order_host}orders/remove/{order_id}')
-
-
-def orders_find(order_id):
-    return requests.get(f'{order_host}orders/find/{order_id}')
-
-
-def payment_pay(user_id, order_id, amount):
-    return requests.post(f'{stock_host}stock/item/create/{price}')
-
-
-def payment_cancel_pay(user_id, order_id):
-    return requests.get(f'{stock_host}stock/find/{item_id}')
-
-
-def payment_status(order_id):
-    return requests.post(f'{stock_host}stock/add/{item_id}/{amount}')
+from random import uniform
+from test.endpoints import EndPoints as ep
 
 
 class TestStockService(unittest.TestCase):
-    item_id = ''
+    user1 = {}
+    order1 = {}
+    item1 = {}
     price = -1
-    stock_item = {}
-    old_amount = -1
-    res = {}
-    rand_int_pos = 0
-    rand_int_neg = 0
-    rand_float_pos = 0.0
-    rand_float_neg = 0.0
+    balance_sufficient = -1
+    balance_insufficient = -1
 
     def setUp(self) -> None:
-        self.price = uniform(0, 100)
-        self.item_id = stock_create(self.price).json()['item_id']
-        self.res = stock_find(self.item_id)
-        self.stock_item = self.res.json()
-        self.old_amount = self.stock_item['stock']
-        self.rand_int_pos = randint(0, 100)
-        self.rand_int_neg = randint(-100, -1)
-        self.rand_float_pos = uniform(0, 100)
-        self.rand_float_neg = uniform(-100, -1)
+        self.user1 = ep.users_create().json()
+        self.user2 = ep.users_create().json()
+        self.order1 = ep.orders_create(self.user1['user_id']).json()
+        self.order2 = ep.orders_create(self.user2['user_id']).json()
 
-    def test_stock_create(self):
-        price = uniform(0, 100)
-        res = stock_create(price)
-        item_id = res.json()['item_id']
-        try:
-            uuid_obj = UUID(item_id, version=4)
-        except ValueError:
-            return False
+        self.price = uniform(0, 100)
+        self.balance_sufficient = self.price
+        self.balance_insufficient = uniform(0, self.price - 1.0)
+
+        self.item1 = ep.stock_create(self.price).json()
+        ep.users_credit_add(self.user1['user_id'], self.balance_sufficient)
+        ep.users_credit_add(self.user2['user_id'], self.balance_insufficient)
+
+        ep.orders_add_item(self.order1['order_id'], self.item1['item_id'])
+        ep.orders_add_item(self.order2['order_id'], self.item1['item_id'])
+
+    def test_payment_sufficient_funds(self):
+        status_before = ep.payment_status(self.order1['order_id'])
+
+        self.assertFalse(status_before.ok)
+
+        balance_before = ep.users_find(self.user1['user_id']).json()['credit']
+
+        res = ep.payment_pay(self.user1['user_id'], self.order1['order_id'], self.price)
+
+        status_after = ep.payment_status(self.order1['order_id'])
+        balance_after = ep.users_find(self.user1['user_id']).json()['credit']
 
         self.assertTrue(res.ok)
-        self.assertEqual(str(uuid_obj), item_id)
+        self.assertTrue(status_after.ok)
+        self.assertEqual(balance_after + self.price, balance_before)
+        self.assertEqual(status_after.json()['paid'], True)
 
-    def test_stock_find(self):
+    def test_payment_insufficient_funds(self):
+        status_before = ep.payment_status(self.order2['order_id'])
 
-        self.assertTrue(self.res.ok)
-        self.assertEqual(self.stock_item['item_id'], self.item_id)
-        self.assertEqual(self.stock_item['price'], self.price)
-        self.assertEqual(self.stock_item['stock'], 0.0)
+        self.assertFalse(status_before.ok)
 
-    def test_stock_add_positive_integer(self):
+        balance_before = ep.users_find(self.user1['user_id']).json()['credit']
 
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
-        new_amount = self.old_amount + self.rand_int_pos
+        res = ep.payment_pay(self.user2['user_id'], self.order2['order_id'], self.price)
 
-        self.assertTrue(res2.ok)
-        self.assertEqual(res2.json(), new_amount)
+        status_after = ep.payment_status(self.order1['order_id'])
+        balance_after = ep.users_find(self.user1['user_id']).json()['credit']
 
-    def test_stock_add_positive_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_pos)
-        new_amount = stock_find(self.item_id).json()['stock']
+        self.assertFalse(res.ok)
+        self.assertFalse(status_after.ok)
+        self.assertEqual(balance_before, balance_after)
 
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
+    def test_payment_non_existing_user(self):
+        status_before = ep.payment_status(self.order1['order_id'])
 
-    def test_stock_add_negative_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        self.assertFalse(status_before.ok)
 
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
+        res = ep.payment_pay(self.order1['order_id'], self.order1['order_id'], self.price)
 
-    def test_stock_add_negative_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        status_after = ep.payment_status(self.order1['order_id'])
 
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
+        self.assertFalse(res.ok)
+        self.assertFalse(status_after.ok)
 
-    def test_stock_subtract_positive_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
 
-        self.assertTrue(res2.ok)
 
-        res3 = stock_subtract(self.stock_item['item_id'], self.rand_int_pos)
 
-        self.assertTrue(res3.ok)
-        self.assertEqual(res3.json(), self.old_amount)
-
-    def test_stock_subtract_positive_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_pos)
-        new_amount = stock_find(self.item_id).json()['stock']
-
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
-
-    def test_stock_subtract_negative_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
-
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
-
-    def test_stock_subtract_negative_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
-
-        self.assertFalse(res2.ok)
-        self.assertEqual(new_amount, self.old_amount)
-
-    def test_stock_subtract_positive_integer_too_much(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
-
-        self.assertTrue(res2.ok)
-
-        res3 = stock_subtract(self.stock_item['item_id'], self.rand_int_pos + 1)
-
-        self.assertFalse(res3.ok)
-        self.assertEqual(stock_find(self.item_id).json()['stock'], self.rand_int_pos)
-
-    if __name__ == '__main__':
-        unittest.main()
 

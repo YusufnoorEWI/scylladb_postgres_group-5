@@ -7,6 +7,7 @@ class EndPoints:
     order_host = os.getenv('ORDER_SERVICE', 'http://127.0.0.1:8080/')
     stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:8080/')
     user_host = os.getenv('USERS_SERVICE', 'http://127.0.0.1:8080/')
+    payment_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:8080/')
 
     @staticmethod
     def users_create():
@@ -71,3 +72,15 @@ class EndPoints:
     @staticmethod
     def orders_checkout(order_id):
         return requests.post(f'{EndPoints.order_host}orders/checkout/{order_id}')
+
+    @staticmethod
+    def payment_pay(user_id, order_id, amount):
+        return requests.post(f'{EndPoints.payment_host}payment/pay/{user_id}/{order_id}/{amount}')
+
+    @staticmethod
+    def payment_cancel(user_id, order_id):
+        return requests.post(f'{EndPoints.payment_host}payment/cancel/{user_id}/{order_id}')
+
+    @staticmethod
+    def payment_status(order_id):
+        return requests.get(f'{EndPoints.payment_host}payment/status/{order_id}')

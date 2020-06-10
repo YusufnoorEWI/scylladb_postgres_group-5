@@ -4,6 +4,7 @@ from random import randint, uniform
 from uuid import UUID
 from test.endpoints import EndPoints as ep
 
+
 class TestStockService(unittest.TestCase):
     item_id = ''
     price = -1
