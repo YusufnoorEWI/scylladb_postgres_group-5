@@ -26,6 +26,10 @@ services:
     environment:
       - DB_HOST=postgres
       - DATABASE_TYPE=postgres
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
   users_service:
     image: "users_service:latest"
@@ -38,6 +42,10 @@ services:
     environment:
       - DATABASE_TYPE=postgres
       - DB_HOST=postgres
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
   payment_service:
     image: 'payment_service:latest'
@@ -50,6 +58,10 @@ services:
     environment:
       - DB_HOST=postgres
       - USER_SERVICE_URL=postgres
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
   order_service:
     image: 'order_service:latest'
@@ -65,6 +77,10 @@ services:
       - USERS_SERVICE=users_service
       - STOCK_SERVICE=stock_service
       - PAYMENT_SERVICE=payment_service
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
   postgres:
     image: "postgres"
