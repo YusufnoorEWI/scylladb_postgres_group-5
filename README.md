@@ -16,7 +16,7 @@ To run a service using docker, a Dockerfile is required like the one in stock_se
 
 To make life easier for you guys I have defined all the steps of starting services and databases in one single docker-compose.yml file. Now the only thing you should have to do is run `docker-compose up --build`. This however requires you to install docker-compose.
 
-At this moment 3 services are then reachable from port 8080: stock, payment and users.
+To run the postgres cluster, you should run: `docker-compose -f docker-compose.postgres.yml up --build`
 ## Install and run ScyllaDB docker image:
 `docker run --name some-scylla -p 9042:9042 -d scylladb/scylla`
 
