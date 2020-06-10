@@ -20,7 +20,7 @@ services:
     networks:
       - our_network
     depends_on:
-      - scylla_stock
+      - postgres
     build:
       context: "./stock_service"
     environment:
@@ -32,7 +32,7 @@ services:
     networks:
      - our_network
     depends_on:
-     - scylla_users
+     - postgres
     build:
       context: "./users_service"
     environment:
@@ -44,7 +44,7 @@ services:
     networks:
       - our_network
     depends_on:
-      - scylla_payment
+      - postgres
     build:
       context: "./payment_service"
     environment:
@@ -56,7 +56,7 @@ services:
     networks:
       - our_network
     depends_on:
-      - scylla_order
+      - postgres
     build:
       context: "./order_service"
     environment:
@@ -66,6 +66,12 @@ services:
       - STOCK_SERVICE=stock_service
       - PAYMENT_SERVICE=payment_service
 
+  postgres:
+    image: "postgres"
+    networks:
+      - our_network
+    environment:
+      - POSTGRES_PASSWORD=notsosecret
 
 networks:
   our_network:
