@@ -343,6 +343,9 @@ class TestOrderService(unittest.TestCase):
 
         self.assertEqual(paid_after, 'True')
 
+    if __name__ == '__main__':
+        unittest.main()
+
 
 
 

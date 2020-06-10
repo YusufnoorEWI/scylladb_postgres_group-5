@@ -1,5 +1,4 @@
 import os
-from decimal import Decimal
 
 import requests
 import unittest
@@ -166,5 +165,6 @@ class TestUsersService(unittest.TestCase):
         self.assertFalse(res2.ok)
         self.assertEqual(new_credit, new_credit2)
 
-
+    if __name__ == '__main__':
+        unittest.main()
 

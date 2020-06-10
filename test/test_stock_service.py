@@ -1,5 +1,4 @@
 import os
-from decimal import Decimal
 
 import requests
 import unittest
@@ -137,4 +136,6 @@ class TestStockService(unittest.TestCase):
         self.assertFalse(res3.ok)
         self.assertEqual(stock_find(self.item_id).json()['stock'], self.rand_int_pos)
 
+    if __name__ == '__main__':
+        unittest.main()
 
