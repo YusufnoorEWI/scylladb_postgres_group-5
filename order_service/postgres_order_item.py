@@ -21,7 +21,7 @@ class PostgresOrderItem(Base_order_item):
     )
 
     def __init__(self, order_id, item_id, price, item_num):
-        self.order_id = order_id,
-        self.item_id = item_id,
-        self.item_num = item_num,
+        self.order_id = order_id
+        self.item_id = item_id
+        self.item_num = item_num
         self.price = price
