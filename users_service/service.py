@@ -2,6 +2,7 @@ from decimal import *
 from flask import Flask, abort, jsonify
 import sys
 import os
+import requests
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -9,6 +10,9 @@ from users_service.connector import ConnectorFactory
 
 app = Flask(__name__)
 connector = ConnectorFactory().get_connector()
+
+
+order_host = os.getenv('ORDER_SERVICE', '127.0.0.1:8080')
 
 
 @app.route('/users/create', methods=['POST'])
@@ -28,13 +32,18 @@ def create():
 def remove(user_id):
     """Removes a user with the given user id.
 
-    :return: success if successful, 500 error otherwise
+    :return: success if successful, 404 error otherwise
     """
-    try:
-        connector.remove(user_id)
-        return jsonify({"success": True}), 200
-    except:
-        abort(500)
+    # try:
+    res = requests.get(f"http://{order_host}/orders/findByUser/{user_id}")
+    res = res.json()
+    connector.remove(user_id)
+    order_ids = res['order_ids']
+    for order_id in order_ids:
+        requests.delete(f"http://{order_host}/orders/remove/{order_id}")
+    return jsonify({"success": True}), 200
+    # except:
+    #     abort(404)
 
 
 @app.route('/users/find/<user_id>', methods=['GET'])

@@ -13,6 +13,7 @@ app = Flask(__name__)
 
 connector = ConnectorFactory().get_connector()
 
+
 @app.route('/stock/find/<item_id>', methods=['GET'])
 def find_item(item_id):
     """Returns the item.
