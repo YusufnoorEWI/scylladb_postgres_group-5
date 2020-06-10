@@ -20,8 +20,8 @@ class Payment(Base):
     # Define all the views
 
     def __init__(self, user_id, order_id, status, amount):
-        self.user_id = user_id,
-        self.order_id = order_id,
+        self.user_id = user_id
+        self.order_id = order_id
         self.status = status
         self.amount = amount
 
