@@ -28,6 +28,9 @@ services:
       - scylla_stock
     build:
       context: "./stock_service"
+    environment:
+      - DB_HOST=scylla_stock
+      - DATABASE_TYPE=scylla
 
   scylla_users:
     image: scylladb/scylla
@@ -42,6 +45,9 @@ services:
      - scylla_users
     build:
       context: "./users_service"
+    environment:
+      - DATABASE_TYPE=scylla
+      - DB_HOST=scylla_users
 
   scylla_payment:
     image: scylladb/scylla
@@ -56,6 +62,9 @@ services:
       - scylla_payment
     build:
       context: "./payment_service"
+    environment:
+      - DB_HOST=scylla_payment
+      - USER_SERVICE_URL=users_service
 
   scylla_order:
     image: scylladb/scylla
@@ -70,6 +79,12 @@ services:
       - scylla_order
     build:
       context: "./order_service"
+    environment:
+      - DB_HOST=scylla_order
+      - USERS_SERVICE=users_service
+      - STOCK_SERVICE=stock_service
+      - PAYMENT_SERVICE=payment_service
+      - DATABASE_TYPE=scylla
 
 networks:
   our_network:
