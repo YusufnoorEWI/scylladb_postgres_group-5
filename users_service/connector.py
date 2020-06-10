@@ -192,8 +192,8 @@ class PostgresConnector:
         :return: the remaining credit
         """
         user = self.get_user(user_id)
+        assert user.credit - number >= 0
         user.credit -= number
-        assert user.credit >= 0
         self.db_session.commit()
         return user.credit
 
