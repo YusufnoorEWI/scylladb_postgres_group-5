@@ -303,7 +303,6 @@ class PostgresConnector:
             item = self.get_order_item(order_id, item_id)
             item.item_num += 1
             self.db_session.commit()
-        # NOT SURE IF THIS WORKS
         except ValueError:
             self.create_order_item(order_id, item_id, item_price, 1)
             item = self.get_order_item(order_id, item_id)
