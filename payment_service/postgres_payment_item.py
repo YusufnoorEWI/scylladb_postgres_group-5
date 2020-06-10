@@ -22,7 +22,7 @@ class Payment(Base):
     def __init__(self, user_id, order_id, status, amount):
         self.user_id = user_id,
         self.order_id = order_id,
-        self.status = status,
+        self.status = status
         self.amount = amount
 
 
