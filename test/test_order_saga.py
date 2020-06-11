@@ -101,3 +101,6 @@ class TestOrderSAGA(unittest.TestCase):
         self.assertEqual(item1_stock, 10)
         self.assertEqual(item2_stock, 1)
         self.assertEqual(user_credit, Decimal(500))
+
+    if __name__ == '__main__':
+        unittest.main()

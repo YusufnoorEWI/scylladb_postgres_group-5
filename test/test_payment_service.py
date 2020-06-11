@@ -74,6 +74,8 @@ class TestPaymentService(unittest.TestCase):
         self.assertFalse(res.ok)
         self.assertFalse(status_after.ok)
 
+    if __name__ == '__main__':
+        unittest.main()
 
 
 

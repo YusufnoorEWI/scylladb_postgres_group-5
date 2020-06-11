@@ -5,7 +5,6 @@ from uuid import UUID
 from test.endpoints import EndPoints as ep
 
 
-
 class TestUsersService(unittest.TestCase):
     user_id = ''
     old_credit = -1.0
