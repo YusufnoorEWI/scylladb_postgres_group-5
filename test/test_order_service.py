@@ -163,7 +163,7 @@ class TestOrderService(unittest.TestCase):
 
         self.assertTrue(res.ok)
         self.assertNotEqual(items_before, items_after)
-        self.assertEqual(test, items_after)
+        self.assertCountEqual(test, items_after)
 
     def test_order_remove_item_existing_twice(self):
         items_before = ep.orders_find(self.order1['order_id']).json()['items']
@@ -283,6 +283,5 @@ class TestOrderService(unittest.TestCase):
 
     if __name__ == '__main__':
         unittest.main()
-
 
 
