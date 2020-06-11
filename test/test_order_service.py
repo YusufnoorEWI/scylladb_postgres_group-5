@@ -178,7 +178,7 @@ class TestOrderService(unittest.TestCase):
         self.assertTrue(res.ok)
         self.assertTrue(res2.ok)
         self.assertNotEqual(items_before, items_after)
-        self.assertEqual(test, items_after)
+        self.assertCountEqual(test, items_after)
 
     def test_order_remove_item_non_existing_order(self):
         res = ep.orders_remove_item(self.user1['user_id'], self.item1['item_id'])
@@ -283,7 +283,6 @@ class TestOrderService(unittest.TestCase):
 
     if __name__ == '__main__':
         unittest.main()
-
 
 
 
