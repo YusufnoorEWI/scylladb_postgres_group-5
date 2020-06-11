@@ -15,6 +15,6 @@ class PostgresStockItem(Base):
     in_stock = Column(BigInteger, nullable=False)
 
     def __init__(self, price, in_stock):
-        self.price = price,
+        self.price = price
         self.in_stock = in_stock
 
