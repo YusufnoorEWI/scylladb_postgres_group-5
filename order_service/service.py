@@ -149,7 +149,7 @@ def reserve_item(item_id, number):
 def reserve_items(order_id, user_id, items):
     reserved_items = []
 
-    for item in items:
+    for item in list(set(items)):
         item_num = connector.get_item_num(order_id=order_id, item_id=item)
         response = reserve_item(item, item_num)
         if response.ok:
@@ -165,6 +165,6 @@ def rollback_item(item_id, number):
 
 
 def rollback_items(order_id, item_ids):
-    for item_id in item_ids:
+    for item_id in list(set(item_ids)):
         number = connector.get_item_num(order_id=order_id, item_id=item_id)
         rollback_item(item_id, number)
