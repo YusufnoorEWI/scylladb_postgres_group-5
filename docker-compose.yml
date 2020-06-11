@@ -116,18 +116,32 @@ services:
       - USER_SERVICE_URL=users_service
       - SCYLLA_NODES="scylla_payment_node1 scylla_payment_node2 scylla_payment_node3"
 
-  scylla_order:
+  scylla_order_node1:
     image: scylladb/scylla
     networks:
       - our_network
-    command: "--smp 1 --overprovisioned 1"
+    command: --seeds=scylla_order_node1 --smp 1 --overprovisioned 1
+
+  scylla_order_node2:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_order_node1,scylla_order_node2 --smp 1 --overprovisioned 1
+
+  scylla_order_node3:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_order_node1,scylla_order_node2,scylla_order_node3 --smp 1 --overprovisioned 1
 
   order_service:
     image: 'order_service:latest'
     networks:
       - our_network
     depends_on:
-      - scylla_order
+      - scylla_order_node1
+      - scylla_order_node2
+      - scylla_order_node3
     build:
       context: "./order_service"
     environment:
@@ -136,6 +150,7 @@ services:
       - STOCK_SERVICE=stock_service
       - PAYMENT_SERVICE=payment_service
       - DATABASE_TYPE=scylla
+      - SCYLLA_NODES="scylla_order_node1 scylla_order_node2 scylla_order_node3"
 
 networks:
   our_network:
