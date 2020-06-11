@@ -4,7 +4,7 @@ from random import uniform
 from test.endpoints import EndPoints as ep
 
 
-class TestStockService(unittest.TestCase):
+class TestPaymentService(unittest.TestCase):
     user1 = {}
     order1 = {}
     item1 = {}
