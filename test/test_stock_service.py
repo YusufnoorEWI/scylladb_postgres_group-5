@@ -1,29 +1,8 @@
-import os
-from decimal import Decimal
-
-import requests
 import unittest
 
 from random import randint, uniform
 from uuid import UUID
-
-stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:8080/')
-
-
-def stock_create(price):
-    return requests.post(f'{stock_host}stock/item/create/{price}')
-
-
-def stock_find(item_id):
-    return requests.get(f'{stock_host}stock/find/{item_id}')
-
-
-def stock_add(item_id, amount):
-    return requests.post(f'{stock_host}stock/add/{item_id}/{amount}')
-
-
-def stock_subtract(item_id, amount):
-    return requests.post(f'{stock_host}stock/subtract/{item_id}/{amount}')
+from test.endpoints import EndPoints as ep
 
 
 class TestStockService(unittest.TestCase):
@@ -39,8 +18,8 @@ class TestStockService(unittest.TestCase):
 
     def setUp(self) -> None:
         self.price = uniform(0, 100)
-        self.item_id = stock_create(self.price).json()['item_id']
-        self.res = stock_find(self.item_id)
+        self.item_id = ep.stock_create(self.price).json()['item_id']
+        self.res = ep.stock_find(self.item_id)
         self.stock_item = self.res.json()
         self.old_amount = self.stock_item['stock']
         self.rand_int_pos = randint(0, 100)
@@ -50,7 +29,7 @@ class TestStockService(unittest.TestCase):
 
     def test_stock_create(self):
         price = uniform(0, 100)
-        res = stock_create(price)
+        res = ep.stock_create(price)
         item_id = res.json()['item_id']
         try:
             uuid_obj = UUID(item_id, version=4)
@@ -69,72 +48,73 @@ class TestStockService(unittest.TestCase):
 
     def test_stock_add_positive_integer(self):
 
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_int_pos)
         new_amount = self.old_amount + self.rand_int_pos
 
         self.assertTrue(res2.ok)
         self.assertEqual(res2.json(), new_amount)
 
     def test_stock_add_positive_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_pos)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_float_pos)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_add_negative_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_int_neg)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_add_negative_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_float_neg)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_subtract_positive_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_int_pos)
 
         self.assertTrue(res2.ok)
 
-        res3 = stock_subtract(self.stock_item['item_id'], self.rand_int_pos)
+        res3 = ep.stock_subtract(self.stock_item['item_id'], self.rand_int_pos)
 
         self.assertTrue(res3.ok)
         self.assertEqual(res3.json(), self.old_amount)
 
     def test_stock_subtract_positive_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_pos)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_float_pos)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_subtract_negative_integer(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_int_neg)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_subtract_negative_float(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_float_neg)
-        new_amount = stock_find(self.item_id).json()['stock']
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_float_neg)
+        new_amount = ep.stock_find(self.item_id).json()['stock']
 
         self.assertFalse(res2.ok)
         self.assertEqual(new_amount, self.old_amount)
 
     def test_stock_subtract_positive_integer_too_much(self):
-        res2 = stock_add(self.stock_item['item_id'], self.rand_int_pos)
+        res2 = ep.stock_add(self.stock_item['item_id'], self.rand_int_pos)
 
         self.assertTrue(res2.ok)
 
-        res3 = stock_subtract(self.stock_item['item_id'], self.rand_int_pos + 1)
+        res3 = ep.stock_subtract(self.stock_item['item_id'], self.rand_int_pos + 1)
 
         self.assertFalse(res3.ok)
-        self.assertEqual(stock_find(self.item_id).json()['stock'], self.rand_int_pos)
+        self.assertEqual(ep.stock_find(self.item_id).json()['stock'], self.rand_int_pos)
 
-
+    if __name__ == '__main__':
+        unittest.main()
