@@ -15,28 +15,45 @@ services:
     ports:
      - "8080:8080"
 
-  scylla_stock:
+  scylla_stock_node1:
     image: scylladb/scylla
     networks:
       - our_network
-    command: "--smp 1 --overprovisioned 1"
+    command: --seeds=scylla_stock_node1 --smp 1 --overprovisioned 1
+
+  scylla_stock_node2:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_stock_node1,scylla_stock_node2 --smp 1 --overprovisioned 1
+
+  scylla_stock_node3:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_stock_node1,scylla_stock_node2,scylla_stock_node3 --smp 1 --overprovisioned 1
+
   stock_service:
     image: "stock_service:latest"
     networks:
       - our_network
     depends_on:
-      - scylla_stock
+      - scylla_stock_node1
+      - scylla_stock_node2
+      - scylla_stock_node3
     build:
       context: "./stock_service"
     environment:
       - DB_HOST=scylla_stock
       - DATABASE_TYPE=scylla
+      - SCYLLA_NODES="scylla_stock_node1 scylla_stock_node2 scylla_stock_node3"
 
   scylla_users:
     image: scylladb/scylla
     networks:
      - our_network
     command: "--smp 1 --overprovisioned 1"
+
   users_service:
     image: "users_service:latest"
     networks:
@@ -48,12 +65,14 @@ services:
     environment:
       - DATABASE_TYPE=scylla
       - DB_HOST=scylla_users
+      - ORDER_SERVICE=order_service
 
   scylla_payment:
     image: scylladb/scylla
     networks:
       - our_network
     command: "--smp 1 --overprovisioned 1"
+
   payment_service:
     image: 'payment_service:latest'
     networks:
@@ -71,6 +90,7 @@ services:
     networks:
       - our_network
     command: "--smp 1 --overprovisioned 1"
+
   order_service:
     image: 'order_service:latest'
     networks:
