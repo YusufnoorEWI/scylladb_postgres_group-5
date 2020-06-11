@@ -48,24 +48,40 @@ services:
       - DATABASE_TYPE=scylla
       - SCYLLA_NODES="scylla_stock_node1 scylla_stock_node2 scylla_stock_node3"
 
-  scylla_users:
+  scylla_users_node1:
     image: scylladb/scylla
     networks:
-     - our_network
-    command: "--smp 1 --overprovisioned 1"
+      - our_network
+    command: --seeds=scylla_users_node1 --smp 1 --overprovisioned 1
+
+  scylla_users_node2:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_users_node1,scylla_users_node2 --smp 1 --overprovisioned 1
+
+  scylla_users_node3:
+    image: scylladb/scylla
+    networks:
+      - our_network
+    command: --seeds=scylla_users_node1,scylla_users_node2,scylla_users_node3 --smp 1 --overprovisioned 1
 
   users_service:
     image: "users_service:latest"
     networks:
      - our_network
     depends_on:
-     - scylla_users
+     - scylla_users_node1
+     - scylla_users_node2
+     - scylla_users_node3
+
     build:
       context: "./users_service"
     environment:
       - DATABASE_TYPE=scylla
       - DB_HOST=scylla_users
       - ORDER_SERVICE=order_service
+      - SCYLLA_NODES="scylla_users_node1 scylla_users_node2 scylla_users_node3"
 
   scylla_payment:
     image: scylladb/scylla
