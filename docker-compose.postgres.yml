@@ -15,79 +15,82 @@ services:
     ports:
      - "8080:8080"
 
-  scylla_stock:
-    image: scylladb/scylla
-    networks:
-      - our_network
-    command: "--smp 1 --overprovisioned 1"
   stock_service:
     image: "stock_service:latest"
     networks:
       - our_network
     depends_on:
-      - scylla_stock
+      - postgres
     build:
       context: "./stock_service"
     environment:
-      - DB_HOST=scylla_stock
-      - DATABASE_TYPE=scylla
+      - DB_HOST=postgres
+      - DATABASE_TYPE=postgres
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
-  scylla_users:
-    image: scylladb/scylla
-    networks:
-     - our_network
-    command: "--smp 1 --overprovisioned 1"
   users_service:
     image: "users_service:latest"
     networks:
      - our_network
     depends_on:
-     - scylla_users
+     - postgres
     build:
       context: "./users_service"
     environment:
-      - DATABASE_TYPE=scylla
-      - DB_HOST=scylla_users
+      - DATABASE_TYPE=postgres
+      - DB_HOST=postgres
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - ORDER_SERVICE=order_service
 
-  scylla_payment:
-    image: scylladb/scylla
-    networks:
-      - our_network
-    command: "--smp 1 --overprovisioned 1"
   payment_service:
     image: 'payment_service:latest'
     networks:
       - our_network
     depends_on:
-      - scylla_payment
+      - postgres
     build:
       context: "./payment_service"
     environment:
-      - DB_HOST=scylla_payment
+      - DB_HOST=postgres
       - USER_SERVICE_URL=users_service
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
 
-  scylla_order:
-    image: scylladb/scylla
-    networks:
-      - our_network
-    command: "--smp 1 --overprovisioned 1"
   order_service:
     image: 'order_service:latest'
     networks:
       - our_network
     depends_on:
-      - scylla_order
+      - postgres
     build:
       context: "./order_service"
     environment:
-      - DB_HOST=scylla_order
+      - DB_HOST=postgres
+      - DATABASE_TYPE=postgres
       - USERS_SERVICE=users_service
       - STOCK_SERVICE=stock_service
       - PAYMENT_SERVICE=payment_service
-      - DATABASE_TYPE=scylla
+      - POSTGRES_PASSWORD=notsosecret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+
+  postgres:
+    image: "postgres"
+    networks:
+      - our_network
+    environment:
+      - POSTGRES_PASSWORD=notsosecret
 
 networks:
   our_network:
     driver: "bridge"
     name: our_network
-
