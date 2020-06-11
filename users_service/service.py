@@ -12,7 +12,7 @@ app = Flask(__name__)
 connector = ConnectorFactory().get_connector()
 
 
-order_host = os.getenv('ORDER_SERVICE', '127.0.0.1:8080')
+order_host = os.getenv('ORDER_SERVICE_URL', '127.0.0.1:8080')
 
 
 @app.route('/users/create', methods=['POST'])
@@ -25,7 +25,7 @@ def create():
         user_id = connector.create()
         return jsonify({"user_id": user_id}), 200
     except:
-        abort(500)
+        abort(404)
 
 
 @app.route('/users/remove/<user_id>', methods=['DELETE'])
@@ -34,16 +34,15 @@ def remove(user_id):
 
     :return: success if successful, 404 error otherwise
     """
-    # try:
-    res = requests.get(f"http://{order_host}/orders/findByUser/{user_id}")
-    res = res.json()
-    connector.remove(user_id)
-    order_ids = res['order_ids']
-    for order_id in order_ids:
-        requests.delete(f"http://{order_host}/orders/remove/{order_id}")
-    return jsonify({"success": True}), 200
-    # except:
-    #     abort(404)
+    try:
+        res = requests.delete(f"http://{order_host}/orders/deleteByUser/{user_id}")
+        if res.ok:
+            connector.remove(user_id)
+            return jsonify({"success": True}), 200
+        else:
+            raise ValueError("Couldn't delete user's orders")
+    except ValueError as error:
+        abort(404, error.args[0])
 
 
 @app.route('/users/find/<user_id>', methods=['GET'])

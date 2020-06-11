@@ -76,6 +76,17 @@ def retrieve_order_by_user(user_id):
         abort(404)
 
 
+@app.route('/orders/deleteByUser/<user_id>', methods=['DELETE'])
+def delete_order_by_user(user_id):
+    try:
+        order_ids = connector.get_order_ids_by_user(user_id)
+        for order_id in order_ids:
+            connector.delete_order(escape(order_id))
+    except ValueError:
+        abort(404)
+    return jsonify({"success": True}), 200
+
+
 @app.route('/orders/addItem/<order_id>/<item_id>', methods=['POST'])
 def add_item(order_id, item_id):
     try:

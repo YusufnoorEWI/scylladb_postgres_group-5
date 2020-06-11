@@ -46,6 +46,7 @@ services:
     build:
       context: "./users_service"
     environment:
+      - ORDER_SERVICE_URL=order_service
       - DATABASE_TYPE=scylla
       - DB_HOST=scylla_users
 
@@ -64,6 +65,7 @@ services:
       context: "./payment_service"
     environment:
       - DB_HOST=scylla_payment
+      - DATABASE_TYPE=scylla
       - USER_SERVICE_URL=users_service
 
   scylla_order:
