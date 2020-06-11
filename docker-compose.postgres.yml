@@ -46,6 +46,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
+      - ORDER_SERVICE=order_service
 
   payment_service:
     image: 'payment_service:latest'
@@ -57,7 +58,7 @@ services:
       context: "./payment_service"
     environment:
       - DB_HOST=postgres
-      - USER_SERVICE_URL=postgres
+      - USER_SERVICE_URL=users_service
       - POSTGRES_PASSWORD=notsosecret
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
