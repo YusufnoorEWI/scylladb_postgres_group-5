@@ -9,7 +9,6 @@ from payment_service.connector import ConnectorFactory
 
 app = Flask(__name__)
 
-
 connector = ConnectorFactory().get_connector()
 
 
