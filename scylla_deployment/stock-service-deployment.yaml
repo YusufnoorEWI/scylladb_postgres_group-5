@@ -30,6 +30,8 @@ spec:
           value: scylla
         - name: DB_HOST
           value: scylla-stock
+        - name: SCYLLA_NODES
+          value: "scylla-stock-node1 scylla-stock-node2 scylla-stock-node3"
         image: sjoerdvandenbos/stock_service:scylla
         imagePullPolicy: ""
         name: stock-service

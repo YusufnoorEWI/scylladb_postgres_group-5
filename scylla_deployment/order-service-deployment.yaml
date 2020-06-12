@@ -32,6 +32,8 @@ spec:
           value: scylla-order
         - name: PAYMENT_SERVICE
           value: payment-service
+        - name: SCYLLA_NODES
+          value: "scylla-order-node1 scylla-order-node2 scylla-order-node3"
         - name: STOCK_SERVICE
           value: stock-service
         - name: USERS_SERVICE

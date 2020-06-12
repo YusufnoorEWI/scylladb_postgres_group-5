@@ -14,24 +14,41 @@ services:
      - order-service
     ports:
      - "8080:8080"
+    expose:
+      - "8080"
 
   scylla-stock-node1:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-stock-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-stock-node2:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-stock-node1,scylla-stock-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-stock-node3:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-stock-node1,scylla-stock-node2,scylla-stock-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   stock-service:
     image: "sjoerdvandenbos/stock_service:scylla"
@@ -47,24 +64,41 @@ services:
       - DB_HOST=scylla-stock
       - DATABASE_TYPE=scylla
       - SCYLLA_NODES="scylla-stock-node1 scylla-stock-node2 scylla-stock-node3"
+    expose:
+      - "80"
 
   scylla-users-node1:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-users-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-users-node2:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-users-node1,scylla-users-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-users-node3:
     image: scylladb/scylla
     networks:
      - our-network
     command: --seeds=scylla-users-node1,scylla-users-node2,scylla-users-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   users-service:
     image: "sjoerdvandenbos/users_service:scylla"
@@ -82,24 +116,41 @@ services:
       - DB_HOST=scylla-users
       - ORDER_SERVICE=order-service
       - SCYLLA_NODES="scylla-users-node1 scylla-users-node2 scylla-users-node3"
+    expose:
+      - "80"
 
   scylla-payment-node1:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-payment-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-payment-node2:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-payment-node1,scylla-payment-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-payment-node3:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-payment-node1,scylla-payment-node2,scylla-payment-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   payment-service:
     image: 'sjoerdvandenbos/payment_service:scylla'
@@ -116,24 +167,41 @@ services:
       - DATABASE_TYPE=scylla
       - USER_SERVICE_URL=users-service
       - SCYLLA_NODES="scylla-payment-node1 scylla-payment-node2 scylla-payment-node3"
+    expose:
+      - "80"
 
   scylla-order-node1:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-order-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-order-node2:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-order-node1,scylla-order-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   scylla-order-node3:
     image: scylladb/scylla
     networks:
       - our-network
     command: --seeds=scylla-order-node1,scylla-order-node2,scylla-order-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
   order-service:
     image: 'sjoerdvandenbos/order_service:scylla'
@@ -152,6 +220,8 @@ services:
       - PAYMENT_SERVICE=payment-service
       - DATABASE_TYPE=scylla
       - SCYLLA_NODES="scylla-order-node1 scylla-order-node2 scylla-order-node3"
+    expose:
+      - "80"
 
 networks:
   our-network:

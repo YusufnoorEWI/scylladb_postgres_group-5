@@ -30,7 +30,6 @@ spec:
         name: proxy
         ports:
         - containerPort: 8080
-        - containerPort: 80
         resources: {}
       restartPolicy: Always
       serviceAccountName: ""

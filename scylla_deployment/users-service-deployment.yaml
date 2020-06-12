@@ -30,8 +30,12 @@ spec:
           value: scylla
         - name: DB_HOST
           value: scylla-users
+        - name: ORDER_SERVICE
+          value: order-service
         - name: ORDER_SERVICE_URL
           value: order-service
+        - name: SCYLLA_NODES
+          value: "scylla-users-node1 scylla-users-node2 scylla-users-node3"
         image: sjoerdvandenbos/users_service:scylla
         imagePullPolicy: ""
         name: users-service
