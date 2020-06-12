@@ -25,12 +25,7 @@ spec:
         io.kompose.service: scylla-payment-node2
     spec:
       containers:
-      - args:
-        - --seeds=scylla-payment-node1,scylla-payment-node2
-        - --smp
-        - "1"
-        - --overprovisioned
-        - "1"
+      - args: ["--seeds", "scylla-payment-node1,scylla-payment-node2", "--smp", "1", "--overprovisioned", "1"]
         image: scylladb/scylla
         imagePullPolicy: ""
         name: scylla-payment-node2

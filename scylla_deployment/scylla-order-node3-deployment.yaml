@@ -25,12 +25,7 @@ spec:
         io.kompose.service: scylla-order-node3
     spec:
       containers:
-      - args:
-        - --seeds=scylla-order-node1,scylla-order-node2,scylla-order-node3
-        - --smp
-        - "1"
-        - --overprovisioned
-        - "1"
+      - args: ["--seeds", "scylla-order-node1,scylla-order-node2,scylla-order-node3", "--smp", "1", "--overprovisioned", "1"]
         image: scylladb/scylla
         imagePullPolicy: ""
         name: scylla-order-node3
