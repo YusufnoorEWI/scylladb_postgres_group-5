@@ -1,6 +1,7 @@
 import os
 from time import sleep
 
+from cassandra import ConsistencyLevel
 from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection, ValidationError
 from cassandra.cqlengine.management import sync_table
@@ -23,6 +24,7 @@ class ConnectorFactory:
         self.postgres_password = os.getenv('POSTGRES_PASSWORD')
         self.postgres_port = os.getenv('POSTGRES_PORT')
         self.postgres_name = os.getenv('POSTGRES_DB')
+        self.scylla_nodes = os.getenv('SCYLLA_NODES').split(" ")
 
     def get_connector(self):
         """
@@ -35,28 +37,29 @@ class ConnectorFactory:
             return PostgresConnector(self.postgres_user, self.postgres_password, self.db_host, self.postgres_port,
                                      self.postgres_name)
         elif self.db_type == 'scylla':
-            return ScyllaConnector(self.db_host)
+            return ScyllaConnector(self.scylla_nodes)
         else:
             raise ValueError("Invalid database")
 
 
 class ScyllaConnector:
-    def __init__(self, host):
+    def __init__(self, nodes):
         """Establishes a connection to the ScyllaDB database, creates the "wdm" keyspace if it does not exist
         and creates or updates the stock_item table.
         """
         while True:
             try:
-                session = Cluster([host]).connect()
+                session = Cluster(contact_points=nodes).connect()
                 break
             except Exception:
                 sleep(1)
         session.execute("""
             CREATE KEYSPACE IF NOT EXISTS wdm
-            WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '2' }
+            WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '3' }
             """)
+        session.default_consistency_level = ConsistencyLevel.QUORUM
 
-        connection.setup([host], "wdm")
+        connection.setup(nodes, "wdm")
         sync_table(ScyllaStockItem)
 
     @staticmethod
