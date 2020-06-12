@@ -1,95 +1,113 @@
-version: "3.8"
+version: "3.7"
 
 services:
   proxy:
-    image: "proxy:latest"
+    image: "sjoerdvandenbos/proxy:latest"
     networks:
-     - our_network
+     - our-network
     build:
      context: "./proxy"
     depends_on:
-     - stock_service
-     - payment_service
-     - users_service
-     - order_service
+     - stock-service
+     - payment-service
+     - users-service
+     - order-service
     ports:
      - "8080:8080"
+    expose:
+      - "80"
+      - "8080"
 
-  scylla_stock:
+  scylla-stock:
     image: scylladb/scylla
     networks:
-      - our_network
+      - our-network
     command: "--smp 1 --overprovisioned 1"
-  stock_service:
-    image: "stock_service:latest"
+    expose:
+      - "9042"
+  stock-service:
+    image: "sjoerdvandenbos/stock_service:scylla"
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_stock
+      - scylla-stock
     build:
       context: "./stock_service"
     environment:
-      - DB_HOST=scylla_stock
+      - DB_HOST=scylla-stock
       - DATABASE_TYPE=scylla
+    expose:
+      - "80"
 
-  scylla_users:
+  scylla-users:
     image: scylladb/scylla
     networks:
-     - our_network
+     - our-network
     command: "--smp 1 --overprovisioned 1"
-  users_service:
-    image: "users_service:latest"
+    expose:
+      - "9042"
+  users-service:
+    image: "sjoerdvandenbos/users_service:scylla"
     networks:
-     - our_network
+     - our-network
     depends_on:
-     - scylla_users
+     - scylla-users
     build:
       context: "./users_service"
     environment:
-      - ORDER_SERVICE_URL=order_service
+      - ORDER_SERVICE_URL=order-service
       - DATABASE_TYPE=scylla
-      - DB_HOST=scylla_users
+      - DB_HOST=scylla-users
+    expose:
+      - "80"
 
-  scylla_payment:
+  scylla-payment:
     image: scylladb/scylla
     networks:
-      - our_network
+      - our-network
     command: "--smp 1 --overprovisioned 1"
-  payment_service:
-    image: 'payment_service:latest'
+    expose:
+      - "9042"
+  payment-service:
+    image: 'sjoerdvandenbos/payment_service:scylla'
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_payment
+      - scylla-payment
     build:
       context: "./payment_service"
     environment:
-      - DB_HOST=scylla_payment
+      - DB_HOST=scylla-payment
       - DATABASE_TYPE=scylla
-      - USER_SERVICE_URL=users_service
+      - USER_SERVICE_URL=users-service
+    expose:
+      - "80"
 
-  scylla_order:
+  scylla-order:
     image: scylladb/scylla
     networks:
-      - our_network
+      - our-network
     command: "--smp 1 --overprovisioned 1"
-  order_service:
-    image: 'order_service:latest'
+    expose:
+      - "9042"
+  order-service:
+    image: 'sjoerdvandenbos/order_service:scylla'
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_order
+      - scylla-order
     build:
       context: "./order_service"
     environment:
-      - DB_HOST=scylla_order
-      - USERS_SERVICE=users_service
-      - STOCK_SERVICE=stock_service
-      - PAYMENT_SERVICE=payment_service
+      - DB_HOST=scylla-order
+      - USERS_SERVICE=users-service
+      - STOCK_SERVICE=stock-service
+      - PAYMENT_SERVICE=payment-service
       - DATABASE_TYPE=scylla
+    expose:
+      - "80"
 
 networks:
-  our_network:
+  our-network:
+    name: our-network
     driver: "bridge"
-    name: our_network
-
