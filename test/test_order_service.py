@@ -33,10 +33,6 @@ class TestOrderService(unittest.TestCase):
         # Order 2 has total price of 20
         ep.orders_add_item(self.order2['order_id'], self.item1['item_id'])
 
-    def tearDown(self) -> None:
-        ep.users_remove(self.user1['user_id'])
-        ep.users_remove(self.user2['user_id'])
-
     def test_order_create_existing_user(self):
         res = ep.orders_create(self.user1['user_id'])
         order_id = res.json()['order_id']
