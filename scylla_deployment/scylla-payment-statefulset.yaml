@@ -7,7 +7,7 @@ metadata:
     app: scylla-payment
 spec:
   serviceName: scylla-payment
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: scylla-payment
@@ -80,4 +80,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
+            storage: 50Gi
