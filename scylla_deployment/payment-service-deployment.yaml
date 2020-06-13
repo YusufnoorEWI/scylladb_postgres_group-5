@@ -21,7 +21,6 @@ spec:
         kompose.version: 1.21.0 (992df58d8)
       creationTimestamp: null
       labels:
-        io.kompose.network/our-network: "true"
         io.kompose.service: payment-service
     spec:
       containers:
@@ -31,11 +30,11 @@ spec:
         - name: DB_HOST
           value: scylla-payment
         - name: SCYLLA_NODES
-          value: "scylla-payment-node1 scylla-payment-node2 scylla-payment-node3"
+          value: "scylla-payment"
         - name: USER_SERVICE_URL
           value: users-service
         image: sjoerdvandenbos/payment_service:scylla
-        imagePullPolicy: ""
+        imagePullPolicy: Always
         name: payment-service
         ports:
         - containerPort: 80

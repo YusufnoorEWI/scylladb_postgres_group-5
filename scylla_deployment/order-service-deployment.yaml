@@ -21,7 +21,6 @@ spec:
         kompose.version: 1.21.0 (992df58d8)
       creationTimestamp: null
       labels:
-        io.kompose.network/our-network: "true"
         io.kompose.service: order-service
     spec:
       containers:
@@ -33,13 +32,13 @@ spec:
         - name: PAYMENT_SERVICE
           value: payment-service
         - name: SCYLLA_NODES
-          value: "scylla-order-node1 scylla-order-node2 scylla-order-node3"
+          value: "scylla-order"
         - name: STOCK_SERVICE
           value: stock-service
         - name: USERS_SERVICE
           value: users-service
         image: sjoerdvandenbos/order_service:scylla
-        imagePullPolicy: ""
+        imagePullPolicy: Always
         name: order-service
         ports:
         - containerPort: 80

@@ -21,7 +21,6 @@ spec:
         kompose.version: 1.21.0 (992df58d8)
       creationTimestamp: null
       labels:
-        io.kompose.network/our-network: "true"
         io.kompose.service: stock-service
     spec:
       containers:
@@ -31,9 +30,9 @@ spec:
         - name: DB_HOST
           value: scylla-stock
         - name: SCYLLA_NODES
-          value: "scylla-stock-node1 scylla-stock-node2 scylla-stock-node3"
+          value: "scylla-stock"
         image: sjoerdvandenbos/stock_service:scylla
-        imagePullPolicy: ""
+        imagePullPolicy: Always
         name: stock-service
         ports:
         - containerPort: 80
