@@ -24,7 +24,8 @@ class ConnectorFactory:
         self.postgres_password = os.getenv('POSTGRES_PASSWORD')
         self.postgres_port = os.getenv('POSTGRES_PORT')
         self.postgres_name = os.getenv('POSTGRES_DB')
-        self.scylla_nodes = os.getenv('SCYLLA_NODES').split(" ")
+        if os.getenv('SCYLLA_NODES'):
+            self.scylla_nodes = os.getenv('SCYLLA_NODES').split(" ")
 
     def get_connector(self):
         """

@@ -7,7 +7,7 @@ metadata:
     app: scylla-stock
 spec:
   serviceName: scylla-stock
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: scylla-stock
@@ -80,4 +80,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
+            storage: 50Gi
