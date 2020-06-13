@@ -13,9 +13,6 @@ class TestUsersService(unittest.TestCase):
         self.user_id = ep.users_create().json()['user_id']
         self.old_credit = ep.users_find(self.user_id).json()['credit']
 
-    def tearDown(self) -> None:
-        ep.users_remove(self.user_id)
-
     def test_users_create(self):
         res = ep.users_create()
         user_id = res.json()['user_id']
