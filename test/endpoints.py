@@ -4,10 +4,10 @@ import requests
 
 
 class EndPoints:
-    order_host = os.getenv('ORDER_SERVICE', 'http://127.0.0.1:8080/')
-    stock_host = os.getenv('STOCK_SERVICE', 'http://127.0.0.1:8080/')
-    user_host = os.getenv('USERS_SERVICE', 'http://127.0.0.1:8080/')
-    payment_host = os.getenv('PAYMENT_SERVICE', 'http://127.0.0.1:8080/')
+    order_host = os.getenv('ORDER_SERVICE', 'http://34.76.24.226:8080/')
+    stock_host = os.getenv('STOCK_SERVICE', 'http://34.76.24.226:8080/')
+    user_host = os.getenv('USERS_SERVICE', 'http://34.76.24.226:8080/')
+    payment_host = os.getenv('PAYMENT_SERVICE', 'http://34.76.24.226:8080/')
 
     @staticmethod
     def users_create():

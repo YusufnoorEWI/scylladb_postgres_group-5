@@ -1,0 +1,83 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  namespace: scylla-space
+  name: scylla-order
+  labels:
+    app: scylla-order
+spec:
+  serviceName: scylla-order
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scylla-order
+  template:
+    metadata:
+      labels:
+        app: scylla-order
+    spec:
+      containers:
+        - name: scylla-order
+          image: scylladb/scylla:latest
+          imagePullPolicy: Always
+          args: ["--seeds", "scylla-order-0"]
+          ports:
+            - containerPort: 7000
+              name: intra-node
+            - containerPort: 7001
+              name: tls-intra-node
+            - containerPort: 7199
+              name: jmx
+            - containerPort: 9042
+              name: cql
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "PID=$(pidof scylla-order) && kill $PID && while ps -p $PID > /dev/null; do sleep 1; done"]
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - exec
+                - /opt/ready-probe.sh
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: scylla-data
+              mountPath: /var/lib/scylla
+            - name: scylla-ready-probe
+              mountPath: /opt/ready-probe.sh
+              subPath: ready-probe.sh
+      volumes:
+        - name: scylla-ready-probe
+          configMap:
+            name: scylla
+  volumeClaimTemplates:
+    - metadata:
+        namespace: scylla-space
+        name: scylla-data
+        annotations:
+          volume.beta.kubernetes.io/storage-class: scylla-ssd
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi

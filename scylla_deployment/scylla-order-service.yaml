@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: scylla-space
+  labels:
+    app: scylla-order
+  name: scylla-order
+spec:
+  clusterIP: None
+  ports:
+    - port: 9042
+  selector:
+    app: scylla-order

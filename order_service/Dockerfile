@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 
 ENTRYPOINT ["gunicorn"]
 
-CMD ["--bind", "0.0.0.0:80", "service:app"]
+CMD ["--worker-class", "gevent", "--worker-connections", "1000", "--bind", "0.0.0.0:80", "service:app"]

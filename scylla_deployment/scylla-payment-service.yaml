@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: scylla-space
+  labels:
+    app: scylla-payment
+  name: scylla-payment
+spec:
+  clusterIP: None
+  ports:
+    - port: 9042
+  selector:
+    app: scylla-payment

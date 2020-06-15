@@ -1,157 +1,229 @@
-version: "3.8"
+version: "3.7"
 
 services:
   proxy:
-    image: "proxy:latest"
+    image: "sjoerdvandenbos/proxy:latest"
     networks:
-     - our_network
+     - our-network
     build:
      context: "./proxy"
     depends_on:
-     - stock_service
-     - payment_service
-     - users_service
-     - order_service
+     - stock-service
+     - payment-service
+     - users-service
+     - order-service
     ports:
      - "8080:8080"
+    expose:
+      - "8080"
 
-  scylla_stock_node1:
+  scylla-stock-node1:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_stock_node1 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-stock-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_stock_node2:
+  scylla-stock-node2:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_stock_node1,scylla_stock_node2 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-stock-node1,scylla-stock-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_stock_node3:
+  scylla-stock-node3:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_stock_node1,scylla_stock_node2,scylla_stock_node3 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-stock-node1,scylla-stock-node2,scylla-stock-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  stock_service:
-    image: "stock_service:latest"
+  stock-service:
+    image: "sjoerdvandenbos/stock_service:scylla"
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_stock_node1
-      - scylla_stock_node2
-      - scylla_stock_node3
+      - scylla-stock-node1
+      - scylla-stock-node2
+      - scylla-stock-node3
     build:
       context: "./stock_service"
     environment:
+      - DB_HOST=scylla-stock
       - DATABASE_TYPE=scylla
-      - SCYLLA_NODES="scylla_stock_node1 scylla_stock_node2 scylla_stock_node3"
+      - SCYLLA_NODES="scylla-stock-node1 scylla-stock-node2 scylla-stock-node3"
+    expose:
+      - "80"
 
-  scylla_users_node1:
+  scylla-users-node1:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_users_node1 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-users-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_users_node2:
+  scylla-users-node2:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_users_node1,scylla_users_node2 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-users-node1,scylla-users-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_users_node3:
+  scylla-users-node3:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_users_node1,scylla_users_node2,scylla_users_node3 --smp 1 --overprovisioned 1
+     - our-network
+    command: --seeds=scylla-users-node1,scylla-users-node2,scylla-users-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  users_service:
-    image: "users_service:latest"
+  users-service:
+    image: "sjoerdvandenbos/users_service:scylla"
     networks:
-     - our_network
+     - our-network
     depends_on:
-     - scylla_users_node1
-     - scylla_users_node2
-     - scylla_users_node3
-
+     - scylla-users-node1
+     - scylla-users-node2
+     - scylla-users-node3
     build:
       context: "./users_service"
     environment:
-      - ORDER_SERVICE_URL=order_service
+      - ORDER_SERVICE_URL=order-service
       - DATABASE_TYPE=scylla
-      - ORDER_SERVICE=order_service
-      - SCYLLA_NODES="scylla_users_node1 scylla_users_node2 scylla_users_node3"
+      - DB_HOST=scylla-users
+      - ORDER_SERVICE=order-service
+      - SCYLLA_NODES="scylla-users-node1 scylla-users-node2 scylla-users-node3"
+    expose:
+      - "80"
 
-  scylla_payment_node1:
+  scylla-payment-node1:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_payment_node1 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-payment-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_payment_node2:
+  scylla-payment-node2:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_payment_node1,scylla_payment_node2 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-payment-node1,scylla-payment-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_payment_node3:
+  scylla-payment-node3:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_payment_node1,scylla_payment_node2,scylla_payment_node3 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-payment-node1,scylla-payment-node2,scylla-payment-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  payment_service:
-    image: 'payment_service:latest'
+  payment-service:
+    image: 'sjoerdvandenbos/payment_service:scylla'
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_payment_node1
-      - scylla_payment_node2
-      - scylla_payment_node3
+      - scylla-payment-node1
+      - scylla-payment-node2
+      - scylla-payment-node3
     build:
       context: "./payment_service"
     environment:
-      - USER_SERVICE_URL=users_service
+      - DB_HOST=scylla-payment
       - DATABASE_TYPE=scylla
-      - SCYLLA_NODES="scylla_payment_node1 scylla_payment_node2 scylla_payment_node3"
+      - USER_SERVICE_URL=users-service
+      - SCYLLA_NODES="scylla-payment-node1 scylla-payment-node2 scylla-payment-node3"
+    expose:
+      - "80"
 
-  scylla_order_node1:
+  scylla-order-node1:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_order_node1 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-order-node1 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_order_node2:
+  scylla-order-node2:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_order_node1,scylla_order_node2 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-order-node1,scylla-order-node2 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  scylla_order_node3:
+  scylla-order-node3:
     image: scylladb/scylla
     networks:
-      - our_network
-    command: --seeds=scylla_order_node1,scylla_order_node2,scylla_order_node3 --smp 1 --overprovisioned 1
+      - our-network
+    command: --seeds=scylla-order-node1,scylla-order-node2,scylla-order-node3 --smp 1 --overprovisioned 1
+    expose:
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9042"
 
-  order_service:
-    image: 'order_service:latest'
+  order-service:
+    image: 'sjoerdvandenbos/order_service:scylla'
     networks:
-      - our_network
+      - our-network
     depends_on:
-      - scylla_order_node1
-      - scylla_order_node2
-      - scylla_order_node3
+      - scylla-order-node1
+      - scylla-order-node2
+      - scylla-order-node3
     build:
       context: "./order_service"
     environment:
-      - USERS_SERVICE=users_service
-      - STOCK_SERVICE=stock_service
-      - PAYMENT_SERVICE=payment_service
+      - DB_HOST=scylla-order
+      - USERS_SERVICE=users-service
+      - STOCK_SERVICE=stock-service
+      - PAYMENT_SERVICE=payment-service
       - DATABASE_TYPE=scylla
-      - SCYLLA_NODES="scylla_order_node1 scylla_order_node2 scylla_order_node3"
+      - SCYLLA_NODES="scylla-order-node1 scylla-order-node2 scylla-order-node3"
+    expose:
+      - "80"
 
 networks:
-  our_network:
+  our-network:
+    name: our-network
     driver: "bridge"
-    name: our_network
-
