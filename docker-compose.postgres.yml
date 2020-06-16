@@ -2,21 +2,21 @@ version: "3.8"
 
 services:
   proxy:
-    image: "proxy:latest"
+    image: "sjoerdvandenbos/proxy:latest"
     networks:
      - our_network
     build:
      context: "./proxy"
     depends_on:
-     - stock_service
-     - payment_service
-     - users_service
-     - order_service
+     - stock-service
+     - payment-service
+     - users-service
+     - order-service
     ports:
      - "8080:8080"
 
-  stock_service:
-    image: "stock_service:latest"
+  stock-service:
+    image: "sjoerdvandenbos/stock_service:latest"
     networks:
       - our_network
     depends_on:
@@ -31,8 +31,8 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
 
-  users_service:
-    image: "users_service:latest"
+  users-service:
+    image: "sjoerdvandenbos/users_service:latest"
     networks:
      - our_network
     depends_on:
@@ -46,10 +46,10 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
-      - ORDER_SERVICE_URL=order_service
+      - ORDER_SERVICE_URL=order-service
 
-  payment_service:
-    image: 'payment_service:latest'
+  payment-service:
+    image: 'sjoerdvandenbos/payment_service:latest'
     networks:
       - our_network
     depends_on:
@@ -58,15 +58,15 @@ services:
       context: "./payment_service"
     environment:
       - DB_HOST=postgres
-      - USER_SERVICE_URL=users_service
+      - USER_SERVICE_URL=users-service
       - DATABASE_TYPE=postgres
       - POSTGRES_PASSWORD=notsosecret
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
 
-  order_service:
-    image: 'order_service:latest'
+  order-service:
+    image: 'sjoerdvandenbos/order_service:latest'
     networks:
       - our_network
     depends_on:
@@ -76,9 +76,9 @@ services:
     environment:
       - DB_HOST=postgres
       - DATABASE_TYPE=postgres
-      - USERS_SERVICE=users_service
-      - STOCK_SERVICE=stock_service
-      - PAYMENT_SERVICE=payment_service
+      - USERS_SERVICE=users-service
+      - STOCK_SERVICE=stock-service
+      - PAYMENT_SERVICE=payment-service
       - POSTGRES_PASSWORD=notsosecret
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
