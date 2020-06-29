@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: postgres-space
+  labels:
+    name: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: payment-service
+  template:
+    metadata:
+      labels:
+        name: payment-service
+    spec:
+      containers:
+      - env:
+        - name: DATABASE_TYPE
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: notsosecret
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: USER_SERVICE_URL
+          value: users-service
+        image: sjoerdvandenbos/payment_service:latest
+        imagePullPolicy: Always
+        name: payment-service
+        ports:
+        - containerPort: 80
+      restartPolicy: Always

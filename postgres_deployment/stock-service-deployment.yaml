@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-service
+  namespace: postgres-space
+  labels:
+    name: stock-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: stock-service
+  template:
+    metadata:
+      labels:
+        name: stock-service
+    spec:
+      containers:
+      - env:
+        - name: DATABASE_TYPE
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: notsosecret
+        - name: POSTGRES_PORT
+          value: "5432"
+        image: sjoerdvandenbos/stock_service:latest
+        imagePullPolicy: Always
+        name: stock-service
+        ports:
+        - containerPort: 80
+      restartPolicy: Always

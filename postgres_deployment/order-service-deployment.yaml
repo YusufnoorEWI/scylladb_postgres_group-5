@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: postgres-space
+  labels:
+    name: order-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: order-service
+  template:
+    metadata:
+      labels:
+        name: order-service
+    spec:
+      containers:
+      - env:
+        - name: DATABASE_TYPE
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: notsosecret
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: USERS_SERVICE
+          value: users-service
+        - name: STOCK_SERVICE
+          value: stock-service
+        - name: PAYMENT_SERVICE
+          value: payment-service
+        image: sjoerdvandenbos/order_service:latest
+        imagePullPolicy: Always
+        name: order-service
+        ports:
+        - containerPort: 80
+      restartPolicy: Always

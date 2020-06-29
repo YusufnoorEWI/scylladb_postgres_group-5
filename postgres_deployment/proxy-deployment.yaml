@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    namespace: postgres-space
+    name: proxy
+  name: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: proxy
+  template:
+    metadata:
+      labels:
+        name: proxy
+    spec:
+      containers:
+      - image: sjoerdvandenbos/proxy:latest
+        imagePullPolicy: Always
+        name: proxy
+        ports:
+        - containerPort: 8080
+      restartPolicy: Always
+      volumes: null
