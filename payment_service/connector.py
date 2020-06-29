@@ -142,7 +142,7 @@ class PostgresConnector:
         """Establishes a connection to the PostgreSQL database, and creates or updates the stock_item table.
         """
         self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
-                                    convert_unicode=True)
+                                    convert_unicode=True, pool_size=10, pool_timeout=3)
         self.db_session = scoped_session(sessionmaker(autocommit=False,
                                                       autoflush=False,
                                                       bind=self.engine))
