@@ -56,7 +56,7 @@ def find_user(user_id):
         user = connector.get_user(user_id)
         return jsonify({"user_id": user.id, "credit": user.credit}), 200
     except ValueError:
-        abort(404)
+        abort(404, description=str(ValueError.__traceback__))
 
 
 @app.route('/users/credit/subtract/<user_id>/<number>', methods=['POST'])
@@ -70,14 +70,14 @@ def subtract_amount(user_id, number):
     try:
         amount = Decimal(number)
         if amount < 0:
-            abort(404)
+            abort(404, description="no money")
 
         result = connector.subtract_amount(user_id, amount)
         return jsonify({"success": True, "credit": result}), 200
-    except AssertionError:
-        abort(400)
-    except (ValueError, InvalidOperation):
-        abort(404)
+    except AssertionError as e:
+        abort(400, description=str(e.__traceback__))
+    except (ValueError, InvalidOperation) as f:
+        abort(404, description=str(f.__traceback__))
 
 
 @app.route('/users/credit/add/<user_id>/<number>', methods=['POST'])
@@ -95,5 +95,6 @@ def add_amount(user_id, number):
 
         result = connector.add_amount(user_id, amount)
         return jsonify({"success": True, "credit": result}), 200
-    except (ValueError, InvalidOperation):
-        abort(404)
+    except (ValueError, InvalidOperation) as e:
+        abort(404, description=str(e.__traceback__))
+

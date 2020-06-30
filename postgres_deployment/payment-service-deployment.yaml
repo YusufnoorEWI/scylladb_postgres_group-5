@@ -6,7 +6,7 @@ metadata:
   labels:
     name: payment-service
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       name: payment-service
