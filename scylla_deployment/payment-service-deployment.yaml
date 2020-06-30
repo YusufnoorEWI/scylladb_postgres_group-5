@@ -9,7 +9,7 @@ metadata:
     io.kompose.service: payment-service
   name: payment-service
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       io.kompose.service: payment-service
@@ -28,9 +28,9 @@ spec:
         - name: DATABASE_TYPE
           value: scylla
         - name: DB_HOST
-          value: scylla-payment
+          value: scylla
         - name: SCYLLA_NODES
-          value: "scylla-payment"
+          value: "scylla"
         - name: USER_SERVICE_URL
           value: users-service
         image: sjoerdvandenbos/payment_service:scylla

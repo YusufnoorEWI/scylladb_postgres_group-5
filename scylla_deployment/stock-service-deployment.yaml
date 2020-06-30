@@ -9,7 +9,7 @@ metadata:
     io.kompose.service: stock-service
   name: stock-service
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       io.kompose.service: stock-service
@@ -28,9 +28,9 @@ spec:
         - name: DATABASE_TYPE
           value: scylla
         - name: DB_HOST
-          value: scylla-stock
+          value: scylla
         - name: SCYLLA_NODES
-          value: "scylla-stock"
+          value: "scylla"
         image: sjoerdvandenbos/stock_service:scylla
         imagePullPolicy: Always
         name: stock-service

@@ -2,25 +2,25 @@ apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
   namespace: scylla-space
-  name: scylla-stock
+  name: scylla
   labels:
-    app: scylla-stock
+    app: scylla
 spec:
-  serviceName: scylla-stock
-  replicas: 1
+  serviceName: scylla
+  replicas: 9
   selector:
     matchLabels:
-      app: scylla-stock
+      app: scylla
   template:
     metadata:
       labels:
-        app: scylla-stock
+        app: scylla
     spec:
       containers:
-        - name: scylla-stock
+        - name: scylla
           image: scylladb/scylla:latest
           imagePullPolicy: Always
-          args: ["--seeds", "scylla-stock-0"]
+          args: ["--seeds", "scylla-0"]
           ports:
             - containerPort: 7000
               name: intra-node
@@ -44,7 +44,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "PID=$(pidof scylla-stock) && kill $PID && while ps -p $PID > /dev/null; do sleep 1; done"]
+                command: ["/bin/sh", "-c", "PID=$(pidof scylla) && kill $PID && while ps -p $PID > /dev/null; do sleep 1; done"]
           env:
             - name: POD_IP
               valueFrom:
@@ -60,24 +60,24 @@ spec:
                 - /opt/ready-probe.sh
             initialDelaySeconds: 15
             timeoutSeconds: 5
-          volumeMounts:
-            - name: scylla-data
-              mountPath: /var/lib/scylla
-            - name: scylla-ready-probe
-              mountPath: /opt/ready-probe.sh
-              subPath: ready-probe.sh
-      volumes:
-        - name: scylla-ready-probe
-          configMap:
-            name: scylla
-  volumeClaimTemplates:
-    - metadata:
-        namespace: scylla-space
-        name: scylla-data
-        annotations:
-          volume.beta.kubernetes.io/storage-class: scylla-ssd
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 50Gi
+#          volumeMounts:
+#            - name: scylla-data
+#              mountPath: /var/lib/scylla
+#            - name: scylla-ready-probe
+#              mountPath: /opt/ready-probe.sh
+#              subPath: ready-probe.sh
+#      volumes:
+#        - name: scylla-ready-probe
+#          configMap:
+#            name: scylla
+#  volumeClaimTemplates:
+#    - metadata:
+#        namespace: scylla-space
+#        name: scylla-data
+#        annotations:
+#          volume.beta.kubernetes.io/storage-class: scylla-ssd
+#      spec:
+#        accessModes: ["ReadWriteOnce"]
+#        resources:
+#          requests:
+#            storage: 5Gi

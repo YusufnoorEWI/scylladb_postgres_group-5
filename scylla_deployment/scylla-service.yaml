@@ -3,11 +3,11 @@ kind: Service
 metadata:
   namespace: scylla-space
   labels:
-    app: scylla-users
-  name: scylla-users
+    app: scylla
+  name: scylla
 spec:
   clusterIP: None
   ports:
     - port: 9042
   selector:
-    app: scylla-users
+    app: scylla
