@@ -9,7 +9,7 @@ metadata:
     io.kompose.service: users-service
   name: users-service
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       io.kompose.service: users-service
@@ -28,13 +28,13 @@ spec:
         - name: DATABASE_TYPE
           value: scylla
         - name: DB_HOST
-          value: scylla-users
+          value: scylla
         - name: ORDER_SERVICE
           value: order-service
         - name: ORDER_SERVICE_URL
           value: order-service
         - name: SCYLLA_NODES
-          value: "scylla-users"
+          value: "scylla"
         image: sjoerdvandenbos/users_service:scylla
         imagePullPolicy: Always
         name: users-service

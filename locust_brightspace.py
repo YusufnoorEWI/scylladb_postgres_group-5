@@ -5,7 +5,7 @@ from typing import List
 from locust import HttpLocust, TaskSet, TaskSequence, seq_task, between
 
 # replace the example urls and ports with the appropriate ones
-url = "http://34.77.67.196:8080/"
+url = "http://34.78.196.0:8080/"
 ORDER_URL = url
 PAYMENT_URL = url
 STOCK_URL = url

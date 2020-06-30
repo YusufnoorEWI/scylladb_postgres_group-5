@@ -9,7 +9,7 @@ metadata:
     io.kompose.service: order-service
   name: order-service
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       io.kompose.service: order-service
@@ -28,11 +28,11 @@ spec:
         - name: DATABASE_TYPE
           value: scylla
         - name: DB_HOST
-          value: scylla-order
+          value: scylla
         - name: PAYMENT_SERVICE
           value: payment-service
         - name: SCYLLA_NODES
-          value: "scylla-order"
+          value: "scylla"
         - name: STOCK_SERVICE
           value: stock-service
         - name: USERS_SERVICE
