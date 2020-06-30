@@ -142,13 +142,13 @@ class PostgresConnector:
         """Establishes a connection to the PostgreSQL database, and creates or updates the stock_item table.
         """
         self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
-                                    convert_unicode=True)
-        self.db_session = scoped_session(sessionmaker(autocommit=False,
-                                                      autoflush=False,
-                                                      bind=self.engine))
+                                    convert_unicode=True, pool_timeout=3)
+        self.db_session = scoped_session(sessionmaker(bind=self.engine))
         Base.query = self.db_session.query_property()
         Base.metadata.create_all(bind=self.engine)
-
+        Base.metadata.query = self.db_session.query_property()
+        Payment.metadata.create_all(bind=self.engine)
+        Payment.metadata.query = self.db_session.query_property()
 
     def pay(self, user_id, order_id, amount):
         """Pays the order
@@ -158,8 +158,9 @@ class PostgresConnector:
         :raise ValidationErrror if the order id is not valid
         :return creates the payment for the parameters used
         """
+        session = self.db_session()
         try:
-            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
+            payment: Payment = session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
             if payment is not None:  # payment exists in the database
                 if payment.status is True:
                     abort(400, "the payment is already made")
@@ -173,12 +174,15 @@ class PostgresConnector:
                 payment.amount = amount
             else:
                 payment = Payment(user_id=user_id, order_id=order_id, status=True, amount=amount)
-            self.db_session.add(payment)
-            self.db_session.commit()
+                session.add(payment)
+            session.commit()
+            return True
         except SQLAlchemyError:
             return abort(400, 'Error in the database')
-
-
+        except Exception:
+            raise
+        finally:
+            session.close()
 
     def cancel_pay(self ,user_id, order_id):
         """Cancels the payment from the database.
@@ -188,8 +192,9 @@ class PostgresConnector:
         :raises : error  if the payment does not exist/made and  if the userid and order id does not exist
         :return: sets the payment status as false (cancel)
         """
+        session = self.db_session()
         try:
-            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
+            payment: Payment = session.query(Payment).filter_by(order_id=order_id, user_id=user_id).first()
             if payment is None:
                 abort(400, 'payment does not exist')
             if payment.status is False:
@@ -198,12 +203,15 @@ class PostgresConnector:
             if not users_response.ok:
                 abort(400, "User service failure")
             payment.status = False
-            self.db_session.add(payment)
-            self.db_session.commit()
+            session.add(payment)
+            session.commit()
+            return True
         except SQLAlchemyError:
             return abort(400, 'Error in the database')
-
-
+        except Exception:
+            raise
+        finally:
+            session.close()
 
     def status(self, order_id):
         """Retrieves the payment from the database by its order_id.
@@ -212,15 +220,19 @@ class PostgresConnector:
         :raises ValueError: if the order with order_id does not exist or if the format of the order_id is invalid
         :return: the payment with order_id order_id
         """
+        session = self.db_session()
         try:
-            payment: Payment = self.db_session.query(Payment).filter_by(order_id=order_id).first()
+            payment: Payment = session.query(Payment).filter_by(order_id=order_id).first()
             if payment is None:
                 abort(400, 'payment does not exist')
             else:
                 return payment.status
-
         except SQLAlchemyError:
             return abort(400, 'Error in the database')
+        except Exception:
+            raise
+        finally:
+            session.close()
 
 
 

@@ -197,7 +197,7 @@ class TestOrderService(unittest.TestCase):
 
         new_balance = float(ep.users_find(self.user1['user_id']).json()['credit'])
 
-        self.assertTrue(res.ok)
+        self.assertTrue(res.ok, f"total_cost: {total_cost}, old_balance: {old_balance}, new_balance: {new_balance}")
         self.assertGreaterEqual(old_balance, total_cost)
         self.assertEqual(new_balance, old_balance - total_cost)
 

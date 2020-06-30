@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: postgres-space
+  labels:
+    name: payment-service
+spec:
+  ports:
+  - name: "80"
+    port: 80
+    targetPort: 80
+  selector:
+    name: payment-service

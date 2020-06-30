@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-service
+  namespace: postgres-space
+  labels:
+    name: users-service
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      name: users-service
+  template:
+    metadata:
+      labels:
+        name: users-service
+    spec:
+      containers:
+      - env:
+        - name: DATABASE_TYPE
+          value: postgres
+        - name: DB_HOST
+          value: postgres
+        - name: ORDER_SERVICE_URL
+          value: order-service
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: notsosecret
+        - name: POSTGRES_PORT
+          value: "5432"
+        image: sjoerdvandenbos/users_service:latest
+        imagePullPolicy: Always
+        name: users-service
+        ports:
+        - containerPort: 80
+      restartPolicy: Always

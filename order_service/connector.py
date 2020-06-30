@@ -211,14 +211,16 @@ class PostgresConnector:
         """Establishes a connection to the PostgreSQL database, and creates or updates the order_item and order table.
         """
         self.engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}',
-                                    convert_unicode=True)
-        self.db_session = scoped_session(sessionmaker(autocommit=False,
-                                                      autoflush=False,
-                                                      bind=self.engine))
+                                    convert_unicode=True, pool_timeout=3)
+        self.db_session = scoped_session(sessionmaker(bind=self.engine))
         Base_order.query = self.db_session.query_property()
         Base_order.metadata.create_all(bind=self.engine)
         Base_order_item.query = self.db_session.query_property()
         Base_order_item.metadata.create_all(bind=self.engine)
+        PostgresOrder.metadata.create_all(bind=self.engine)
+        PostgresOrder.metadata.query = self.db_session.query_property()
+        PostgresOrderItem.metadata.create_all(bind=self.engine)
+        PostgresOrderItem.metadata.query = self.db_session.query_property()
 
     def create_order(self, user_id):
         """creates an order for the given user, and returns an order_id
@@ -226,10 +228,14 @@ class PostgresConnector:
         :param user_id: the user id
         :return: the id of the order
         """
-        order = PostgresOrder(user_id=user_id)
-        self.db_session.add(order)
-        self.db_session.commit()
-        return order.order_id
+        session = self.db_session()
+        try:
+            order = PostgresOrder(user_id=user_id)
+            session.add(order)
+            session.commit()
+            return order.order_id
+        finally:
+            session.close()
 
     def create_order_item(self, order_id, item_id, price, item_num):
         """creates an order for the given user, and returns an order_id
@@ -240,10 +246,14 @@ class PostgresConnector:
         :param item_num: amount of items
         :return: the id of the order
         """
-        order_item = PostgresOrderItem(order_id, item_id, price, item_num)
-        self.db_session.add(order_item)
-        self.db_session.commit()
-        return order_item.order_id
+        session = self.db_session()
+        try:
+            order_item = PostgresOrderItem(order_id, item_id, price, item_num)
+            session.add(order_item)
+            session.commit()
+            return order_item.order_id
+        finally:
+            session.close()
 
     def get_order(self, order_id):
         """Retrieves the order from the database by its id.
@@ -252,14 +262,15 @@ class PostgresConnector:
         :raises ValueError: if the order with order_id does not exist or if the format of the order_id is invalid
         :return: the order with id order_id
         """
+        session = self.db_session()
         try:
-            order = self.db_session.query(PostgresOrder).filter_by(order_id=order_id).one()
+            return session.query(PostgresOrder).filter_by(order_id=order_id).one()
         except NoResultFound:
             raise ValueError(f"Order with id {order_id} not found")
         except DataError:
             raise ValueError(f"Order id {order_id} is not a valid id")
-
-        return order
+        finally:
+            session.close()
 
     def get_order_item(self, order_id, item_id):
         """Retrieves the order item from the database by its order_id and item_id
@@ -269,8 +280,9 @@ class PostgresConnector:
         :return: the order item with ids order_id and item_id
 
         """
+        session = self.db_session()
         try:
-            item = self.db_session.query(PostgresOrderItem) \
+            return session.query(PostgresOrderItem) \
                 .filter_by(order_id=order_id, item_id=item_id).one()
         except DataError:
             raise ValueError(f"Item {item_id} in order {order_id} is not a valid id")
@@ -278,19 +290,24 @@ class PostgresConnector:
             raise ValueError(f"Item {item_id} in order {order_id} not found")
         except ValidationError:
             raise ValueError("Unknown exception (validation error)")
-        return item
+        finally:
+            session.close()
 
     def delete_order(self, order_id):
         """Deletes an order by ID
 
         :param order_id: the id of the order to delete
         """
+        session = self.db_session()
         try:
-            order = self.get_order(order_id=order_id)
-            self.db_session.delete(order)
-            self.db_session.commit()
-        except ValueError | QueryException:
+            order = session.query(PostgresOrder).filter_by(order_id=order_id).one()
+            session.delete(order)
+            session.commit()
+            return True
+        except ValueError or QueryException:
             raise ValueError(f"Order with id {order_id} not found")
+        finally:
+            session.close()
 
     def add_item(self, item_id, order_id, item_price):
         """Adds a given item in the order given
@@ -301,18 +318,22 @@ class PostgresConnector:
         :param item_price: price of the item
         :return: the list of item in order
         """
-
         if item_price < 0:
             raise ValueError(f"Item price {item_price} is not valid")
+        session = self.db_session()
         try:
-            item = self.get_order_item(order_id, item_id)
+            item = session.query(PostgresOrderItem) \
+                .filter_by(order_id=order_id, item_id=item_id).one()
             item.item_num += 1
-            self.db_session.commit()
-        except ValueError:
-            self.create_order_item(order_id, item_id, item_price, 1)
-            item = self.get_order_item(order_id, item_id)
-            self.db_session.commit()
-        return item.item_num
+            session.commit()
+            return item.item_num
+        except NoResultFound:
+            order_item = PostgresOrderItem(order_id, item_id, item_price, 1)
+            session.add(order_item)
+            session.commit()
+            return order_item.item_num
+        finally:
+            session.close()
 
     def remove_item(self, order_id, item_id):
         """Removes the given item from the given order
@@ -322,17 +343,20 @@ class PostgresConnector:
         :raises AssertionError: if the item is not in the order
         :return: the list of the item in stock
         """
+        session = self.db_session()
         try:
-            item = self.get_order_item(order_id, item_id)
+            item = session.query(PostgresOrderItem) \
+                .filter_by(order_id=order_id, item_id=item_id).one()
             item.item_num -= 1
-            self.db_session.commit()
+            tmp = item.item_num
+            if item.item_num == 0:
+                session.delete(item)
+            session.commit()
+            return tmp
         except ValueError:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
-        tmp = item.item_num
-        if item.item_num == 0:
-            self.db_session.delete(item)
-            self.db_session.commit()
-        return tmp
+        finally:
+            session.close()
 
     def get_order_info(self, order_id):
         """
@@ -341,26 +365,34 @@ class PostgresConnector:
         :param order_id: id of the order
         :return: order information (paid, items, user_id, total_cost)
         """
-        order = self.get_order(order_id)
-        items = self.db_session.query(PostgresOrderItem) \
-            .filter_by(order_id=order_id).all()
-        items = items[:]
-        total_cost = 0
-        item_list = []
-        for item in items:
-            total_cost += item.item_num * item.price
-            item_list.extend([str(item.item_id)] * item.item_num)
-        return order.paid, item_list, order.user_id, total_cost
+        session = self.db_session()
+        try:
+            order = session.query(PostgresOrder).filter_by(order_id=order_id).one()
+            items = session.query(PostgresOrderItem) \
+                .filter_by(order_id=order_id).all()
+            total_cost = 0
+            item_list = []
+            for item in items:
+                total_cost += item.item_num * item.price
+                item_list.extend([str(item.item_id)] * item.item_num)
+            return order.paid, item_list, order.user_id, total_cost
+        except Exception:
+            raise
+        finally:
+            session.close()
 
     def get_order_ids_by_user(self, user_id):
+        session = self.db_session()
         try:
-            orders = self.db_session.query(PostgresOrder).filter_by(user_id=user_id).all()
+            orders = session.query(PostgresOrder).filter_by(user_id=user_id).all()
             order_ids = []
             for order in list(orders):
                 order_ids.append(order.order_id)
+            return order_ids
         except QueryException:
             raise ValueError("No orders for user")
-        return order_ids
+        finally:
+            session.close()
             
     def find_item(self, order_id, item_id):
         """
@@ -370,8 +402,9 @@ class PostgresConnector:
         :param item_id: id of item to look for
         :return: Boolean indicating whether item was found, price if found
         """
+        session = self.db_session()
         try:
-            item = self.db_session.query(PostgresOrderItem) \
+            item = session.query(PostgresOrderItem) \
                 .filter_by(order_id=order_id, item_id=item_id).one()
             if item is None:
                 return False, None
@@ -380,6 +413,8 @@ class PostgresConnector:
             return False, None
         except DataError:
             raise ValueError("Not legal item id")
+        finally:
+            session.close()
 
     def get_item_num(self, order_id, item_id):
         """
@@ -389,12 +424,15 @@ class PostgresConnector:
         :param item_id: id of item to count
         :return: amount of occurrences of item with item_id in order with order_id
         """
+        session = self.db_session()
         try:
-            item = self.db_session.query(PostgresOrderItem) \
+            item = session.query(PostgresOrderItem) \
                 .filter_by(order_id=order_id, item_id=item_id).one()
             return item.item_num
         except NoResultFound:
             raise ValueError(f"Order {order_id} does not contain item {item_id}")
+        finally:
+            session.close()
 
     def set_paid(self, order_id):
         """
@@ -403,7 +441,13 @@ class PostgresConnector:
         :param order_id: id of order to adjust
         :return: True if success.
         """
-        order = self.get_order(order_id)
-        order.paid = True
-        self.db_session.commit()
-        return True
+        session = self.db_session()
+        try:
+            order = session.query(PostgresOrder).filter_by(order_id=order_id).one()
+            order.paid = True
+            session.commit()
+            return True
+        except Exception:
+            raise
+        finally:
+            session.close()
