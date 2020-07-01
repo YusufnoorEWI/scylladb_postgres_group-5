@@ -20,7 +20,7 @@ spec:
         - name: scylla
           image: scylladb/scylla:latest
           imagePullPolicy: Always
-          args: ["--seeds", "scylla-0"]
+          args: ["--seeds", "scylla-0", "--smp", "2", "--overprovisioned", "1"]
           ports:
             - containerPort: 7000
               name: intra-node
